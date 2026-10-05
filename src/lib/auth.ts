@@ -68,8 +68,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
       return true;
     },
-    async jwt({ token, user }) {
-      if (user?.id) {
+    async jwt({ token, user, account }) {
+      // Only the credentials provider returns our Mongo id as user.id.
+      // OAuth providers return their own profile id, which must never
+      // become the session user — resolve those through the linked user.
+      if (user?.id && account?.provider === "credentials") {
         token.userId = user.id;
       }
       if (!token.userId && token.email) {
