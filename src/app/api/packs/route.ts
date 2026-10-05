@@ -1,13 +1,30 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+import { handleRouteError } from "@/lib/apiErrors";
+import { createPack, listPacks } from "@/lib/packService";
+import { parseJsonBody } from "@/lib/requestParsing";
+import { requireUserId } from "@/lib/session";
+import { packCreateSchema } from "@/lib/shared/schemas";
 
-// Stub — implemented in backend.md.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
-  return NextResponse.json({ error: "Not implemented" }, { status: 501 });
+  try {
+    const packs = await listPacks(await requireUserId());
+    return NextResponse.json({ packs });
+  } catch (error) {
+    return handleRouteError(error);
+  }
 }
 
-// Stub — implemented in backend.md.
-export async function POST() {
-  return NextResponse.json({ error: "Not implemented" }, { status: 501 });
+export async function POST(req: Request) {
+  try {
+    const userId = await requireUserId();
+    const input = await parseJsonBody(req, packCreateSchema);
+    const pack = await createPack(userId, input);
+    return NextResponse.json({ pack }, { status: 201 });
+  } catch (error) {
+    return handleRouteError(error);
+  }
 }

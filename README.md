@@ -51,6 +51,19 @@ Put the public key in both `VAPID_PUBLIC_KEY` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 - `npm run build` / `npm start` — production build and serve
 - `npm run lint` — ESLint
 - `npm run typecheck` — `tsc --noEmit`
+- `npm test` — vitest unit tests (date math, cycle derivation)
+
+## Accounts and sign-in
+
+- Email + password and Google sign-in are both supported (Auth.js v5, JWT sessions, no adapter).
+- A Google sign-in with a verified email links to an existing account on the same email. If that account was created with a password but never verified its email, linking **removes the stored password hash** — this stops someone from pre-registering your email with their own password and riding along when you sign in with Google. After linking, that account signs in with Google only.
+- There is **no password reset in v1**. If you signed up with email + password, keep it safe.
+
+## Reminders
+
+- Set a daily time in settings and opt into browser push. The external scheduler calls `GET /api/cron/reminders` about every minute; users whose local time has passed their reminder time (within a 2-hour grace window) get one generic notification per day: no mention of pills anywhere in the text.
+- Only active pill days trigger reminders. Placebo days, days before your first pack, and days you already logged are skipped.
+- Scale note: each sweep loads all reminder-enabled users, which is fine for thousands of users. Past that, bucket users by reminder time.
 
 ## Vercel deployment
 
