@@ -9,7 +9,7 @@ export interface PillPackDoc extends Omit<SharedPack, "id" | "userId">, Document
 
 const pillPackSchema = new Schema<PillPackDoc>(
   {
-    userId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     name: { type: String, required: true, minlength: 1, maxlength: 60 },
     activeDays: { type: Number, required: true, min: 1, max: 120 },
     placeboDays: { type: Number, required: true, min: 0, max: 14 },
