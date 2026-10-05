@@ -43,27 +43,50 @@ export function CalendarBoard() {
   const [nudge, setNudge] = useState<Record<string, number | undefined>>({});
   const containerRef = useRef<HTMLDivElement | null>(null);
   const paneRefs = useRef(new Map<string, HTMLElement>());
-  const pendingScroll = useRef<string | null>(null);
   const announcedRef = useRef<string | null>(null);
   const edgeRef = useRef({ lo: "", width: 0 });
+  // While a button-led scroll is flying, the strip must not shrink under
+  // it: unmounting the trailing pane shifts every pixel destination and
+  // snap lands a month too far. Growth is always fine.
+  const navigatingRef = useRef(false);
+  const targetRef = useRef<string | null>(null);
+  const jumpRef = useRef(false);
+  const settleTimer = useRef<number | null>(null);
+  const [span, setSpan] = useState<{ lo: string; hi: string } | null>(null);
 
   // The visible month follows the server once it answers, until the user
   // picks a month themselves (by scrolling or with the buttons).
   const month = userMonth ?? serverToday?.slice(0, 7) ?? currentMonthInTz(timezone ?? "UTC");
 
   const loaded = Object.keys(months).sort();
-  let lo = shiftMonth(month, -1);
-  let hi = shiftMonth(month, 1);
+  let computedLo = shiftMonth(month, -1);
+  let computedHi = shiftMonth(month, 1);
   if (loaded.length > 0) {
     const first = loaded[0] as string;
     const last = loaded[loaded.length - 1] as string;
-    if (first < lo) lo = first;
-    if (last > hi) hi = last;
+    if (first < computedLo) computedLo = first;
+    if (last > computedHi) computedHi = last;
   }
   // Safety cap so a far-flung cache never renders an endless strip.
   const cap = Math.floor(MAX_PANES / 2);
-  if (shiftMonth(month, -cap) > lo) lo = shiftMonth(month, -cap);
-  if (shiftMonth(month, cap) < hi) hi = shiftMonth(month, cap);
+  if (shiftMonth(month, -cap) > computedLo) computedLo = shiftMonth(month, -cap);
+  if (shiftMonth(month, cap) < computedHi) computedHi = shiftMonth(month, cap);
+
+  // Freeze shrinking while navigating; growing (backfill, new months) is safe.
+  useEffect(() => {
+    setSpan((prev) => {
+      if (!prev) {
+        return { lo: computedLo, hi: computedHi };
+      }
+      return {
+        lo: prev.lo < computedLo && navigatingRef.current ? prev.lo : computedLo,
+        hi: prev.hi > computedHi && navigatingRef.current ? prev.hi : computedHi,
+      };
+    });
+  }, [computedLo, computedHi]);
+
+  const lo = span?.lo ?? computedLo;
+  const hi = span?.hi ?? computedHi;
   const panes = rangeMonths(lo, hi);
 
   const firstPackMonth = packs.reduce<string | null>(
@@ -74,19 +97,57 @@ export function CalendarBoard() {
 
   const scrollBehavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
 
-  const scrollToMonth = useCallback(
-    (target: string, behavior: ScrollBehavior) => {
+  const markSettled = useCallback(() => {
+    navigatingRef.current = false;
+    if (settleTimer.current !== null) {
+      window.clearTimeout(settleTimer.current);
+      settleTimer.current = null;
+    }
+    if (targetRef.current) {
+      setUserMonth(targetRef.current);
+      targetRef.current = null;
+    }
+  }, []);
+
+  // Natural scroll end also settles navigation (manual swipes included).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    container.addEventListener("scrollend", markSettled);
+    return () => container.removeEventListener("scrollend", markSettled);
+  }, [markSettled]);
+
+  useEffect(() => {
+    return () => {
+      if (settleTimer.current !== null) {
+        window.clearTimeout(settleTimer.current);
+      }
+    };
+  }, []);
+
+  // One step sideways, relative to wherever the strip is right now — immune
+  // to panes mounting or (after settling) unmounting underneath. Rapid
+  // clicks step from the intended target, so three clicks means three months.
+  const step = useCallback(
+    (delta: -1 | 1) => {
       const container = containerRef.current;
-      const pane = paneRefs.current.get(target);
-      if (!container || !pane) {
+      if (!container) {
         return;
       }
-      container.scrollTo({
-        left: pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2,
-        behavior,
-      });
+      const base = targetRef.current ?? month;
+      const target = shiftMonth(base, delta);
+      targetRef.current = target;
+      navigatingRef.current = true;
+      if (settleTimer.current !== null) {
+        window.clearTimeout(settleTimer.current);
+      }
+      settleTimer.current = window.setTimeout(markSettled, 700);
+      setUserMonth(target);
+      container.scrollBy({ left: delta * container.clientWidth, behavior: scrollBehavior });
     },
-    [],
+    [month, scrollBehavior, markSettled],
   );
 
   // Jump straight to the active pane on first paint, no animation.
@@ -101,6 +162,7 @@ export function CalendarBoard() {
   }, []);
 
   // Prepending older months pushes content right; hold the view steady.
+  // Also lands far jumps (Today) once their pane mounts.
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -111,6 +173,16 @@ export function CalendarBoard() {
       container.scrollLeft += container.scrollWidth - prev.width;
     }
     edgeRef.current = { lo, width: container.scrollWidth };
+    if (jumpRef.current && targetRef.current) {
+      const pane = paneRefs.current.get(targetRef.current);
+      if (pane) {
+        container.scrollTo({
+          left: pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2,
+          behavior: "auto",
+        });
+        jumpRef.current = false;
+      }
+    }
   });
 
   // The snapped pane is the active month.
@@ -178,15 +250,6 @@ export function CalendarBoard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, lo, hi]);
 
-  // Button or keyboard jumps that land outside the rendered strip wait a
-  // frame for the pane to exist, then scroll to it.
-  useEffect(() => {
-    if (pendingScroll.current && paneRefs.current.has(pendingScroll.current)) {
-      scrollToMonth(pendingScroll.current, scrollBehavior);
-      pendingScroll.current = null;
-    }
-  });
-
   // Move DOM focus when keyboard navigation picks a day.
   useEffect(() => {
     if (!focusedDay) {
@@ -195,29 +258,31 @@ export function CalendarBoard() {
     document.querySelector<HTMLElement>(`[data-day="${focusedDay}"]`)?.focus();
   }, [focusedDay, months]);
 
-  const goTo = useCallback(
-    (next: string) => {
-      if (!paneRefs.current.has(next)) {
-        pendingScroll.current = next;
-      }
-      setUserMonth(next);
-      scrollToMonth(next, scrollBehavior);
-    },
-    [scrollBehavior, scrollToMonth],
-  );
-
   const goToday = useCallback(() => {
     const tz = timezone ?? "UTC";
     const current = serverToday?.slice(0, 7) ?? currentMonthInTz(tz);
-    if (!paneRefs.current.has(current)) {
-      pendingScroll.current = current;
+    // A far jump crosses many snap points: go instant, never a snap crawl.
+    // If the pane isn't mounted yet, the layout effect lands it on arrival.
+    targetRef.current = current;
+    navigatingRef.current = true;
+    jumpRef.current = true;
+    if (settleTimer.current !== null) {
+      window.clearTimeout(settleTimer.current);
     }
+    settleTimer.current = window.setTimeout(markSettled, 700);
     setUserMonth(current);
-    scrollToMonth(current, scrollBehavior);
+    const container = containerRef.current;
+    const pane = paneRefs.current.get(current);
+    if (container && pane) {
+      container.scrollTo({
+        left: pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2,
+        behavior: "auto",
+      });
+    }
     if (serverToday) {
       setFocusedDay(serverToday);
     }
-  }, [timezone, serverToday, scrollBehavior, scrollToMonth]);
+  }, [timezone, serverToday, markSettled]);
 
   const nudgeDay = useCallback((day: DayString) => {
     setNudge((prev) => ({ ...prev, [day]: Date.now() }));
@@ -266,7 +331,7 @@ export function CalendarBoard() {
     const move = (delta: number) => {
       const target = addDays(current, delta);
       if (target.slice(0, 7) !== month) {
-        goTo(target.slice(0, 7));
+        step(delta > 0 ? 1 : -1);
       }
       setFocusedDay(target);
     };
@@ -307,11 +372,11 @@ export function CalendarBoard() {
         break;
       case "PageUp":
         event.preventDefault();
-        goTo(shiftMonth(month, -1));
+        step(-1);
         break;
       case "PageDown":
         event.preventDefault();
-        goTo(shiftMonth(month, 1));
+        step(1);
         break;
       default:
         break;
@@ -326,8 +391,8 @@ export function CalendarBoard() {
       <MonthHeader
         month={month}
         showToday={month !== currentMonth}
-        onPrev={() => goTo(shiftMonth(month, -1))}
-        onNext={() => goTo(shiftMonth(month, 1))}
+        onPrev={() => step(-1)}
+        onNext={() => step(1)}
         onToday={goToday}
       />
       <div
