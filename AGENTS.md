@@ -115,6 +115,7 @@ When the same branching, validation, or parsing appears in two or more API route
   * `src/lib/*` is server-only business logic (DB, auth, env, services). Start every file with `import "server-only"` and use `void Model;` for every Mongoose model the file touches.
   * `src/lib/shared/*` is the one exception: pure, framework-free code that both client and server need (date helpers, cycle calculations, config, zod schemas). It must not import server-only code or touch the database.
   * `src/hooks/*` is client/reusable React logic. Do not put server code in hooks.
+  * `src/client/*` is client-only, non-React code: the typed API wrapper, the mock layer, and small pure UI helpers (for example calendar grid math). Never import server-only code from it.
   * `src/types/*` is the type source of truth — never re-declare a type that already exists there.
   * `src/store/*` is cross-cutting UI state only.
 * Keep extraction separate from writing. Reading and validating a request body is one helper; creating or updating records is another. Do not merge them into one God file.
