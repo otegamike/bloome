@@ -1,0 +1,74 @@
+/* Design tokens. Real values land in design.md — these are placeholders. */
+
+:root[data-theme="blush"] {
+  --bg: #fdf6f7;
+  --bg-soft: #fbeef0;
+  --surface: #ffffff;
+  --text: #4a3440;
+  --text-muted: #a08692;
+  --primary: #e8a0b4;
+  --primary-soft: #f6d3dd;
+  --accent: #c98aa0;
+  --border: #f2dbe1;
+  --missed: #f3b8c2;
+  --radius: 1rem;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+}
+
+:root[data-theme="rose"] {
+  --bg: #faf3f0;
+  --bg-soft: #f6e7e1;
+  --surface: #ffffff;
+  --text: #50333a;
+  --text-muted: #a98a8f;
+  --primary: #d77f93;
+  --primary-soft: #f2c4cf;
+  --accent: #b25f78;
+  --border: #eed2d9;
+  --missed: #f3b8c2;
+  --radius: 1rem;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+}
+
+:root[data-theme="peach"] {
+  --bg: #fff9f4;
+  --bg-soft: #fdf0e4;
+  --surface: #ffffff;
+  --text: #54403a;
+  --text-muted: #ab938a;
+  --primary: #eda87f;
+  --primary-soft: #f9d8bd;
+  --accent: #c98a63;
+  --border: #f3e0cd;
+  --missed: #f3b8c2;
+  --radius: 1rem;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+  }
+}
