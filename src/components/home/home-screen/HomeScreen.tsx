@@ -105,11 +105,11 @@ export function HomeScreen() {
           <div className={styles.columns}>
             <div className={styles.left}>
               <TodayCard />
-              <PackStrip />
               <Legend />
             </div>
             <div className={styles.right}>
               <CalendarBoard />
+              <PackStrip />
             </div>
           </div>
         )}
