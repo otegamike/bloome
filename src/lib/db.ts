@@ -22,14 +22,15 @@ function getCache(): MongooseCache {
 
 /**
  * Connect to MongoDB once and reuse the connection across
- * serverless invocations and dev hot-reloads.
+ * serverless invocations and dev hot-reloads. The database is always
+ * "Bloome", no matter what path the connection string carries.
  */
 export async function connectDB(): Promise<typeof mongoose> {
   const cache = getCache();
   if (cache.conn) return cache.conn;
   if (!cache.promise) {
     const { MONGODB_URI } = getEnv();
-    cache.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false });
+    cache.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false, dbName: "Bloome" });
   }
   cache.conn = await cache.promise;
   return cache.conn;
