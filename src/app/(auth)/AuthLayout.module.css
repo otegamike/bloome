@@ -94,7 +94,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-6) var(--space-4) var(--space-8);
+  padding: var(--space-8) var(--space-6);
 }
 
 .mobileBrand {
@@ -135,13 +135,26 @@
   .mobileBrand {
     display: none;
   }
-}
 
-@media (max-width: 767px) {
   .decor .headline,
   .decor .subtitle {
     position: relative;
     z-index: 1;
+  }
+}
+
+@media (min-width: 867px) {
+  .page {
+    flex-direction: row;
+  }
+
+  .decor {
+    max-width: 400px;
+  }
+
+  .form {
+    flex: 1;
+    padding: var(--space-16) var(--space-12);
   }
 }
 
