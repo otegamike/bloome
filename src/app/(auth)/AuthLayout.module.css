@@ -1,0 +1,157 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.decor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-4);
+  overflow: hidden;
+  background: linear-gradient(160deg, var(--color-primary-soft), var(--color-bg));
+  text-align: center;
+}
+
+.dekorBloom {
+  animation: bloom-spin 90s linear infinite;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 600;
+  line-height: var(--leading-tight);
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+
+.petal {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  opacity: 0.5;
+  filter: blur(2px);
+  animation: blob-float 32s var(--ease-soft) infinite alternate;
+}
+
+.petalOne {
+  width: 60px;
+  height: 60px;
+  top: 12%;
+  left: 8%;
+}
+
+.petalTwo {
+  width: 120px;
+  height: 120px;
+  top: 60%;
+  left: 4%;
+  animation-duration: 40s;
+}
+
+.petalThree {
+  width: 80px;
+  height: 80px;
+  top: 20%;
+  right: 10%;
+  animation-duration: 28s;
+}
+
+.petalFour {
+  width: 100px;
+  height: 100px;
+  bottom: 8%;
+  right: 16%;
+  animation-duration: 36s;
+}
+
+.petalFive {
+  width: 64px;
+  height: 64px;
+  top: 44%;
+  left: 44%;
+  animation-duration: 30s;
+}
+
+.petalSix {
+  width: 90px;
+  height: 90px;
+  bottom: 20%;
+  left: 30%;
+  animation-duration: 44s;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-4) var(--space-8);
+}
+
+.mobileBrand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (min-width: 768px) {
+  .page {
+    flex-direction: row;
+  }
+
+  .decor {
+    flex: 1;
+  }
+
+  .form {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .mobileBrand {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .decor .headline,
+  .decor .subtitle {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+@keyframes bloom-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

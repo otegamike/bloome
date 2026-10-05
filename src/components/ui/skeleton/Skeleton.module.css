@@ -1,0 +1,58 @@
+.skeleton {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--color-primary-soft);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgb(255 255 255 / 0.55) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: shimmer 1.4s linear infinite;
+}
+
+.text {
+  height: 14px;
+  border-radius: var(--radius-sm);
+}
+
+.title {
+  height: 28px;
+  width: 60%;
+  border-radius: var(--radius-sm);
+}
+
+.card {
+  min-height: 120px;
+  border-radius: var(--radius-lg);
+}
+
+.cell {
+  aspect-ratio: 1;
+  border-radius: var(--radius-cell);
+}
+
+.dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+}
+
+.button {
+  height: 48px;
+  border-radius: var(--radius-pill);
+}
+
+.chip {
+  height: 28px;
+  width: 120px;
+  border-radius: var(--radius-pill);
+}

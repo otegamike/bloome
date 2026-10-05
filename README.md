@@ -79,4 +79,45 @@ iOS delivers web push only to the installed (Home Screen) PWA, not to plain Safa
 
 ## Icons
 
-`public/icons/` holds placeholder SVG art. Real icon art is still to be designed.
+`public/icons/` holds the BloomMark-based app art: `icon.svg` plus generated
+`icon-192.png`, `icon-512.png`, and `icon-maskable-512.png` (mark at 60% of
+the canvas for the maskable safe zone).
+
+## Frontend
+
+The UI is built per `frontend.md` (behavior) and `design.md` (visuals):
+Next.js App Router, CSS Modules with tokens in `src/styles/tokens.css`, no
+Tailwind, no inline styles, Zustand stores in `src/store`, and a typed client
+in `src/client/apiClient.ts`.
+
+### Mock mode
+
+Set `NEXT_PUBLIC_USE_MOCKS=true` in `.env.local` to run the whole UI without
+a backend or login. The app serves an in-memory copy (user "Rose", one
+Levofem 21+7 pack started 12 days ago with a deliberate gap) that mirrors the
+real shapes, status codes, and error bodies. State persists in
+`localStorage`, and a subtle "Mock data" pill shows in the header.
+
+- Switch it off with `NEXT_PUBLIC_USE_MOCKS=false` (plus a real
+  `MONGODB_URI` and Auth.js env) to run against MongoDB.
+- Append `?mockFail=log` to any URL to make the next log save fail once, so
+  you can test the optimistic rollback and retry toast.
+
+### QA checklist
+
+- [ ] Register, onboarding with Levofem default, a start date 10 days ago, theme chosen, finish lands on Home with a correct calendar.
+- [ ] Tap today: drawn check, toast with Undo, Today card done state; Undo reverses cleanly.
+- [ ] Missed days show a dashed open ring; tapping one opens the sheet; "Mark as taken" fills it in and shows "Logged late".
+- [ ] Placebo days are striped with a moon and never red; tapping shows the info sheet.
+- [ ] Future days toast; days before the first pack are inert.
+- [ ] Month navigation by buttons, swipe, and keyboard; "Today" pill appears and returns.
+- [ ] Pack strip spans a cycle crossing two months correctly.
+- [ ] All three themes look right on Home, Settings, and Onboarding; switching cross-fades with no flash on reload.
+- [ ] Reduced motion on: everything still correct, no decorative movement.
+- [ ] Keyboard-only: complete login, mark today, open a day sheet, change a setting.
+- [ ] Screen reader labels on cells and announcements for mark and undo.
+- [ ] Reminders: enable, test notification, disable; blocked, unsupported, and iPhone-not-installed messages appear correctly.
+- [ ] Rollback: with `?mockFail=log`, a failed save restores the cell and shows the retry toast.
+- [ ] Timezone banner appears when the device timezone differs and can be dismissed.
+- [ ] 320px, 360px, 768px, 1024px, and 1440px widths all look right; no horizontal scroll.
+- [ ] `npm run typecheck` and `npm run lint` pass; no inline `style`, no Tailwind, no new dependencies.

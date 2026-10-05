@@ -1,0 +1,98 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.round {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.round:active {
+  transform: scale(0.92);
+}
+
+.round:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.title {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  animation: title-in 200ms var(--ease-out) both;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: var(--text-3xl);
+  }
+}
+
+.year {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.todayPill {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  animation: today-in 220ms var(--ease-out) both;
+}
+
+.todayPill:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.todaySlot {
+  width: 1px;
+}
+
+@keyframes title-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes today-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

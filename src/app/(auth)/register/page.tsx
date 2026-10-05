@@ -1,14 +1,5 @@
-import Link from "next/link";
+import { RegisterForm } from "@/components/auth/register-form/RegisterForm";
 
-// Placeholder. Real form lands in frontend.md + backend.md.
 export default function RegisterPage() {
-  return (
-    <main>
-      <h1>Create your account</h1>
-      <p>Registration is coming soon.</p>
-      <p>
-        Already have one? <Link href="/login">Log in</Link>.
-      </p>
-    </main>
-  );
+  return <RegisterForm />;
 }
