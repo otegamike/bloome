@@ -10,7 +10,6 @@ import {
   shiftMonth,
 } from "@/client/calendarGrid";
 import { addDays } from "@/lib/shared/dates";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useCalendarStore, type MonthEntry } from "@/store/useCalendarStore";
 import { usePackStore } from "@/store/usePackStore";
@@ -27,6 +26,10 @@ import styles from "./CalendarBoard.module.css";
 const BACKFILL_CHUNK = 5;
 const MAX_PANES = 25;
 
+// Every pane is exactly one viewport wide, so the scroll position IS the
+// active month: index = round(scrollLeft / width). No observers, no parked
+// scrolls, no navigation flags — the strip position is the single source of
+// truth and everything else derives from it.
 export function CalendarBoard() {
   const timezone = useCalendarStore((s) => s.timezone);
   const serverToday = useCalendarStore((s) => s.today);
@@ -34,59 +37,36 @@ export function CalendarBoard() {
   const fetchMonth = useCalendarStore((s) => s.fetchMonth);
   const packs = usePackStore((s) => s.packs);
   const weekStartsOn = usePrefsStore((s) => s.weekStartsOn);
-  const reducedMotion = useReducedMotion();
-  const [userMonth, setUserMonth] = useState<string | null>(null);
+  const [anchor, setAnchor] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const sheetDay = useSheetStore((s) => s.day);
   const openSheet = useSheetStore((s) => s.open);
   const closeSheet = useSheetStore((s) => s.close);
   const [focusedDay, setFocusedDay] = useState<DayString | null>(null);
   const [nudge, setNudge] = useState<Record<string, number | undefined>>({});
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const paneRefs = useRef(new Map<string, HTMLElement>());
   const announcedRef = useRef<string | null>(null);
-  const edgeRef = useRef({ lo: "", width: 0 });
-  // While a button-led scroll is flying, the strip must not shrink under
-  // it: unmounting the trailing pane shifts every pixel destination and
-  // snap lands a month too far. Growth is always fine.
-  const navigatingRef = useRef(false);
-  const targetRef = useRef<string | null>(null);
-  const jumpRef = useRef(false);
-  const settleTimer = useRef<number | null>(null);
-  const [span, setSpan] = useState<{ lo: string; hi: string } | null>(null);
+  const edgeRef = useRef({ lo: "", anchor: "__mount__" });
+  // Chains rapid clicks: each press steps from the last requested index so
+  // two fast clicks can never land on the same pane. Cleared on arrival.
+  const pendingRef = useRef<number | null>(null);
 
-  // The visible month follows the server once it answers, until the user
-  // picks a month themselves (by scrolling or with the buttons).
-  const month = userMonth ?? serverToday?.slice(0, 7) ?? currentMonthInTz(timezone ?? "UTC");
+  const fallbackMonth =
+    anchor ?? serverToday?.slice(0, 7) ?? currentMonthInTz(timezone ?? "UTC");
 
   const loaded = Object.keys(months).sort();
-  let computedLo = shiftMonth(month, -1);
-  let computedHi = shiftMonth(month, 1);
+  let lo = shiftMonth(fallbackMonth, -1);
+  let hi = shiftMonth(fallbackMonth, 1);
   if (loaded.length > 0) {
     const first = loaded[0] as string;
     const last = loaded[loaded.length - 1] as string;
-    if (first < computedLo) computedLo = first;
-    if (last > computedHi) computedHi = last;
+    if (first < lo) lo = first;
+    if (last > hi) hi = last;
   }
   // Safety cap so a far-flung cache never renders an endless strip.
   const cap = Math.floor(MAX_PANES / 2);
-  if (shiftMonth(month, -cap) > computedLo) computedLo = shiftMonth(month, -cap);
-  if (shiftMonth(month, cap) < computedHi) computedHi = shiftMonth(month, cap);
-
-  // Freeze shrinking while navigating; growing (backfill, new months) is safe.
-  useEffect(() => {
-    setSpan((prev) => {
-      if (!prev) {
-        return { lo: computedLo, hi: computedHi };
-      }
-      return {
-        lo: prev.lo < computedLo && navigatingRef.current ? prev.lo : computedLo,
-        hi: prev.hi > computedHi && navigatingRef.current ? prev.hi : computedHi,
-      };
-    });
-  }, [computedLo, computedHi]);
-
-  const lo = span?.lo ?? computedLo;
-  const hi = span?.hi ?? computedHi;
+  if (shiftMonth(fallbackMonth, -cap) > lo) lo = shiftMonth(fallbackMonth, -cap);
+  if (shiftMonth(fallbackMonth, cap) < hi) hi = shiftMonth(fallbackMonth, cap);
   const panes = rangeMonths(lo, hi);
 
   const firstPackMonth = packs.reduce<string | null>(
@@ -95,145 +75,106 @@ export function CalendarBoard() {
     null,
   );
 
-  const scrollBehavior: ScrollBehavior = reducedMotion ? "auto" : "smooth";
+  const displayedMonth = panes[activeIndex] ?? fallbackMonth;
+  const currentMonth = (serverToday ?? `${fallbackMonth}-01`).slice(0, 7);
 
-  const markSettled = useCallback(() => {
-    navigatingRef.current = false;
-    if (settleTimer.current !== null) {
-      window.clearTimeout(settleTimer.current);
-      settleTimer.current = null;
-    }
-    if (targetRef.current) {
-      setUserMonth(targetRef.current);
-      targetRef.current = null;
-    }
-  }, []);
-
-  // Natural scroll end also settles navigation (manual swipes included).
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) {
-      return;
-    }
-    container.addEventListener("scrollend", markSettled);
-    return () => container.removeEventListener("scrollend", markSettled);
-  }, [markSettled]);
-
-  useEffect(() => {
-    return () => {
-      if (settleTimer.current !== null) {
-        window.clearTimeout(settleTimer.current);
-      }
-    };
-  }, []);
-
-  // One step sideways, relative to wherever the strip is right now — immune
-  // to panes mounting or (after settling) unmounting underneath. Rapid
-  // clicks step from the intended target, so three clicks means three months.
-  const step = useCallback(
-    (delta: -1 | 1) => {
+  // Programmatic paging is always instant: the snap container makes each
+  // press exactly one pane, with no mid-flight state to go stale. (Gliding
+  // belongs to finger swipes, which stay native.) "auto" is deliberately
+  // NOT used here — even when the browser would smooth it, a smooth flight
+  // plus a mid-flight unmount lands a month off.
+  const scrollToIndex = useCallback(
+    (target: number) => {
       const container = containerRef.current;
-      if (!container) {
+      if (!container || panes.length === 0) {
         return;
       }
-      const base = targetRef.current ?? month;
-      const target = shiftMonth(base, delta);
-      targetRef.current = target;
-      navigatingRef.current = true;
-      if (settleTimer.current !== null) {
-        window.clearTimeout(settleTimer.current);
-      }
-      settleTimer.current = window.setTimeout(markSettled, 700);
-      setUserMonth(target);
-      container.scrollBy({ left: delta * container.clientWidth, behavior: scrollBehavior });
+      const clamped = Math.max(0, Math.min(target, panes.length - 1));
+      pendingRef.current = clamped;
+      container.scrollLeft = clamped * container.clientWidth;
     },
-    [month, scrollBehavior, markSettled],
+    [panes.length],
   );
 
-  // Jump straight to the active pane on first paint, no animation.
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    const pane = paneRefs.current.get(month);
-    if (container && pane && edgeRef.current.lo === "") {
-      container.scrollLeft =
-        pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2;
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Prepending older months pushes content right; hold the view steady.
-  // Also lands far jumps (Today) once their pane mounts.
-  useLayoutEffect(() => {
+  // Track the active pane from the scroll position.
+  useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
-    const prev = edgeRef.current;
-    if (prev.lo !== "" && lo < prev.lo) {
-      container.scrollLeft += container.scrollWidth - prev.width;
-    }
-    edgeRef.current = { lo, width: container.scrollWidth };
-    if (jumpRef.current && targetRef.current) {
-      const pane = paneRefs.current.get(targetRef.current);
-      if (pane) {
-        container.scrollTo({
-          left: pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2,
-          behavior: "auto",
-        });
-        jumpRef.current = false;
+    const onScroll = () => {
+      const width = container.clientWidth;
+      if (width === 0 || panes.length === 0) {
+        return;
       }
-    }
-  });
+      const index = Math.max(0, Math.min(Math.round(container.scrollLeft / width), panes.length - 1));
+      if (pendingRef.current !== null && index === pendingRef.current) {
+        pendingRef.current = null;
+      }
+      setActiveIndex(index);
+    };
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
+  }, [panes.length]);
 
-  // The snapped pane is the active month.
-  useEffect(() => {
+  // Reconcile pixels with panes after every commit. Panes mounting or
+  // unmounting at either end shifts content, so move the scroll position by
+  // exactly the shift and keep the same month under the view. An explicit
+  // recenter (Today) jumps straight to the anchor month instead. The scroll
+  // listener then reports the corrected index — this effect never sets it.
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container || panes.length === 0) {
       return;
     }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) {
-            continue;
-          }
-          const seen = (entry.target as HTMLElement).dataset.month;
-          if (seen) {
-            setUserMonth(seen);
-          }
-        }
-      },
-      { root: container, threshold: 0.6 },
-    );
-    for (const pane of panes) {
-      const el = paneRefs.current.get(pane);
-      if (el) {
-        observer.observe(el);
+    const width = container.clientWidth;
+    const prev = edgeRef.current;
+    if (prev.lo === "") {
+      const start = panes.indexOf(fallbackMonth);
+      container.scrollLeft = (start >= 0 ? start : 0) * width;
+    } else if (anchor !== null && anchor !== prev.anchor) {
+      const idx = panes.indexOf(anchor);
+      if (idx >= 0) {
+        container.scrollLeft = idx * width;
       }
+    } else if (panes.includes(prev.lo)) {
+      const k = panes.indexOf(prev.lo);
+      if (k > 0) {
+        container.scrollLeft += k * width;
+      }
+    } else {
+      // Front unmounted: count the removed months and pull back.
+      let k = 0;
+      let m = prev.lo;
+      while (m < lo && k < 40) {
+        m = shiftMonth(m, 1);
+        k += 1;
+      }
+      container.scrollLeft = Math.max(0, container.scrollLeft - k * width);
     }
-    return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [panes.join("|")]);
+    edgeRef.current = { lo: panes[0] as string, anchor: anchor ?? "" };
+  });
 
   // Announce month changes for screen readers (not the first paint).
   useEffect(() => {
     if (announcedRef.current === null) {
-      announcedRef.current = month;
+      announcedRef.current = displayedMonth;
       return;
     }
-    if (announcedRef.current !== month) {
-      announcedRef.current = month;
-      useAlertStore.getState().announce(monthLabel(month));
+    if (announcedRef.current !== displayedMonth) {
+      announcedRef.current = displayedMonth;
+      useAlertStore.getState().announce(monthLabel(displayedMonth));
     }
-  }, [month]);
+  }, [displayedMonth]);
 
-  // Keep the active month loaded; backfill older chunks on reaching the edge.
+  // Keep the visible month loaded; backfill older chunks at the left edge and
+  // extend one month past the right edge.
   useEffect(() => {
-    if (!months[month]) {
-      void fetchMonth(month);
+    if (!months[displayedMonth]) {
+      void fetchMonth(displayedMonth);
     }
-    if (month <= lo) {
-      const chunk = olderMonths(lo, BACKFILL_CHUNK).filter(
+    if (activeIndex === 0 && panes.length > 0) {
+      const chunk = olderMonths(panes[0] as string, BACKFILL_CHUNK).filter(
         (m) => !months[m] && (!firstPackMonth || m >= firstPackMonth),
       );
       const take = firstPackMonth ? chunk : chunk.slice(-1);
@@ -241,14 +182,14 @@ export function CalendarBoard() {
         void fetchMonth(m);
       }
     }
-    if (month >= hi) {
+    if (activeIndex === panes.length - 1 && panes.length > 0) {
       const next = shiftMonth(hi, 1);
       if (!months[next]) {
         void fetchMonth(next);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, lo, hi]);
+  }, [displayedMonth, activeIndex, lo, hi]);
 
   // Move DOM focus when keyboard navigation picks a day.
   useEffect(() => {
@@ -258,31 +199,22 @@ export function CalendarBoard() {
     document.querySelector<HTMLElement>(`[data-day="${focusedDay}"]`)?.focus();
   }, [focusedDay, months]);
 
+  // Step sideways from the last requested pane so rapid clicks chain
+  // instead of all landing on the same one.
+  const step = useCallback(
+    (delta: -1 | 1) => {
+      scrollToIndex((pendingRef.current ?? activeIndex) + delta);
+    },
+    [activeIndex, scrollToIndex],
+  );
+
   const goToday = useCallback(() => {
-    const tz = timezone ?? "UTC";
-    const current = serverToday?.slice(0, 7) ?? currentMonthInTz(tz);
-    // A far jump crosses many snap points: go instant, never a snap crawl.
-    // If the pane isn't mounted yet, the layout effect lands it on arrival.
-    targetRef.current = current;
-    navigatingRef.current = true;
-    jumpRef.current = true;
-    if (settleTimer.current !== null) {
-      window.clearTimeout(settleTimer.current);
-    }
-    settleTimer.current = window.setTimeout(markSettled, 700);
-    setUserMonth(current);
-    const container = containerRef.current;
-    const pane = paneRefs.current.get(current);
-    if (container && pane) {
-      container.scrollTo({
-        left: pane.offsetLeft - (container.clientWidth - pane.clientWidth) / 2,
-        behavior: "auto",
-      });
-    }
+    // The layout effect recenters on the anchor once its pane mounts.
+    setAnchor(currentMonth);
     if (serverToday) {
       setFocusedDay(serverToday);
     }
-  }, [timezone, serverToday, markSettled]);
+  }, [currentMonth, serverToday]);
 
   const nudgeDay = useCallback((day: DayString) => {
     setNudge((prev) => ({ ...prev, [day]: Date.now() }));
@@ -320,7 +252,7 @@ export function CalendarBoard() {
   );
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    const days = months[month]?.days ?? [];
+    const days = months[displayedMonth]?.days ?? [];
     if (days.length === 0) {
       return;
     }
@@ -330,7 +262,7 @@ export function CalendarBoard() {
     }
     const move = (delta: number) => {
       const target = addDays(current, delta);
-      if (target.slice(0, 7) !== month) {
+      if (target.slice(0, 7) !== displayedMonth) {
         step(delta > 0 ? 1 : -1);
       }
       setFocusedDay(target);
@@ -383,14 +315,13 @@ export function CalendarBoard() {
     }
   };
 
-  const currentMonth = (serverToday ?? `${month}-01`).slice(0, 7);
   const justChanged = useCalendarStore((s) => s.justChanged);
 
   return (
     <section aria-label="Calendar" className={styles.board}>
       <MonthHeader
-        month={month}
-        showToday={month !== currentMonth}
+        month={displayedMonth}
+        showToday={displayedMonth !== currentMonth}
         onPrev={() => step(-1)}
         onNext={() => step(1)}
         onToday={goToday}
@@ -406,13 +337,6 @@ export function CalendarBoard() {
           {panes.map((pane) => (
             <section
               key={pane}
-              ref={(el) => {
-                if (el) {
-                  paneRefs.current.set(pane, el);
-                } else {
-                  paneRefs.current.delete(pane);
-                }
-              }}
               data-month={pane}
               aria-label={monthLabel(pane)}
               className={styles.pane}

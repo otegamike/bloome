@@ -32,6 +32,13 @@ export async function connectDB(): Promise<typeof mongoose> {
     const { MONGODB_URI } = getEnv();
     cache.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false, dbName: "Bloome" });
   }
-  cache.conn = await cache.promise;
+  try {
+    cache.conn = await cache.promise;
+  } catch (error) {
+    // A failed attempt must never poison the cache: drop it so the next
+    // request retries instead of failing instantly forever.
+    cache.promise = null;
+    throw error;
+  }
   return cache.conn;
 }
