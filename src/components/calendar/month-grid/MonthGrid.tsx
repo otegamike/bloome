@@ -15,7 +15,6 @@ interface MonthGridProps {
   focusedDay: DayString | null;
   onFocusDay: (day: DayString) => void;
   onActivate: (day: CalendarDay) => void;
-  slideDirection: "next" | "prev" | null;
 }
 
 function cellLabel(day: CalendarDay): string {
@@ -46,7 +45,6 @@ export function MonthGrid({
   focusedDay,
   onFocusDay,
   onActivate,
-  slideDirection,
 }: MonthGridProps) {
   const cells = buildGridCells(days, weekStartsOn);
   const labels = weekdayLabels(weekStartsOn);
@@ -62,7 +60,6 @@ export function MonthGrid({
       <div
         role="grid"
         aria-label="Calendar"
-        data-slide={slideDirection ?? undefined}
         className={styles.grid}
       >
         {cells.map((cell, index) =>

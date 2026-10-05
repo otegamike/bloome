@@ -111,28 +111,6 @@ html.theme-transition *::after {
   }
 }
 
-@keyframes slide-in-next {
-  from {
-    transform: translateX(24px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-in-prev {
-  from {
-    transform: translateX(-24px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
 @keyframes sheet-up {
   from {
     transform: translateY(100%);

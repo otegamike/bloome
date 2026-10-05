@@ -59,6 +59,26 @@ export function shiftMonth(month: string, delta: number): string {
   return out;
 }
 
+/** Every month from lo through hi, oldest first. Assumes lo <= hi. */
+export function rangeMonths(lo: string, hi: string): string[] {
+  const months: string[] = [];
+  let current = lo;
+  while (current <= hi) {
+    months.push(current);
+    current = shiftMonth(current, 1);
+  }
+  return months;
+}
+
+/** The `count` months just before `lo`, oldest first (for backfill chunks). */
+export function olderMonths(lo: string, count: number): string[] {
+  const months: string[] = [];
+  for (let i = count; i >= 1; i -= 1) {
+    months.push(shiftMonth(lo, -i));
+  }
+  return months;
+}
+
 export function currentMonthInTz(timezone: string): string {
   try {
     const parts = new Intl.DateTimeFormat("en-CA", {

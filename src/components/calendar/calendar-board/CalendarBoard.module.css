@@ -15,6 +15,28 @@
   gap: 3px;
 }
 
+.viewport {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.strip {
+  display: flex;
+  align-items: stretch;
+}
+
+.pane {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
 .error {
   display: flex;
   flex-direction: column;

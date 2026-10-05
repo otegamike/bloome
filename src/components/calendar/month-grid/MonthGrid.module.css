@@ -27,14 +27,6 @@
   gap: 3px;
 }
 
-.grid[data-slide="next"] {
-  animation: slide-in-next 280ms var(--ease-out) both;
-}
-
-.grid[data-slide="prev"] {
-  animation: slide-in-prev 280ms var(--ease-out) both;
-}
-
 .spacer {
   aspect-ratio: 1;
 }

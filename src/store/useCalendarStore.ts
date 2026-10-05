@@ -9,7 +9,7 @@ import type { DayString, LogStatus } from "@/types";
 
 type MonthStatus = "idle" | "loading" | "ready" | "error";
 
-interface MonthEntry {
+export interface MonthEntry {
   status: MonthStatus;
   days: CalendarDay[];
 }
@@ -23,7 +23,7 @@ interface CalendarState {
   justChanged: Record<string, { kind: JustKind; at: number } | undefined>;
   pending: Record<string, boolean | undefined>;
   epoch: number;
-  fetchMonth: (month: string, opts?: { force?: boolean }) => Promise<void>;
+  fetchMonth: (month: string, opts?: { force?: boolean; prefetch?: boolean }) => Promise<void>;
   ensureRange: (fromDay: DayString, toDay: DayString) => Promise<void>;
   prefetchAdjacent: (month: string) => void;
   getDay: (day: DayString) => CalendarDay | null;
@@ -125,7 +125,11 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
         today: response.today,
         timezone: response.timezone,
       }));
-      get().prefetchAdjacent(month);
+      // Prefetched months never prefetch further: otherwise every load
+      // chains outward until the server's date window stops it.
+      if (!opts?.prefetch) {
+        get().prefetchAdjacent(month);
+      }
     } catch (error) {
       handleAuthError(error);
       if (seqByMonth[month] !== seq) {
@@ -145,7 +149,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   prefetchAdjacent: (month) => {
     for (const neighbor of [shiftMonth(month, -1), shiftMonth(month, 1)]) {
       if (!get().months[neighbor]) {
-        void get().fetchMonth(neighbor);
+        void get().fetchMonth(neighbor, { prefetch: true });
       }
     }
   },
