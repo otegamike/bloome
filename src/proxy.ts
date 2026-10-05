@@ -25,6 +25,10 @@ function isStaticAsset(pathname: string): boolean {
  * check happen in pages and route handlers.
  */
 export function proxy(request: NextRequest) {
+  // Frontend mock mode: the app must be reachable without logging in.
+  if (process.env.NEXT_PUBLIC_USE_MOCKS === "true") {
+    return NextResponse.next();
+  }
   const { pathname, search } = request.nextUrl;
   if (isStaticAsset(pathname) || isPublic(pathname)) {
     return NextResponse.next();

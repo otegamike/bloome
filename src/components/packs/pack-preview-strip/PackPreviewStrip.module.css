@@ -1,0 +1,75 @@
+.strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  list-style: none;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-sunken);
+  box-shadow: var(--shadow-inset);
+  background-image: linear-gradient(
+    120deg,
+    transparent 35%,
+    rgb(255 255 255 / 0.5) 50%,
+    transparent 65%
+  );
+}
+
+.item {
+  display: flex;
+  justify-content: center;
+}
+
+.dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  color: #ffffff;
+  transition: background-color 160ms var(--ease-out);
+}
+
+@media (max-width: 479px) {
+  .dot {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+.dot[data-state="taken"] {
+  background: var(--color-taken);
+}
+
+.dot[data-state="missed"] {
+  background: var(--color-missed-soft);
+  border: 2px dashed var(--color-missed);
+}
+
+.dot[data-state="skipped"] {
+  border: 1.5px solid var(--color-skipped-ink);
+  background: transparent;
+}
+
+.dot[data-state="placebo"] {
+  background: var(--color-placebo-soft);
+  border: 1px solid var(--color-placebo);
+}
+
+.dot[data-state="upcoming"] {
+  border: 1.5px solid var(--color-primary-light);
+  background: transparent;
+}
+
+.dot[data-state="today"] {
+  border: 2px solid var(--color-primary);
+  background: transparent;
+  animation: breathe 2.6s var(--ease-soft) infinite;
+}
+
+.dot[data-state="outside"] {
+  opacity: 0.25;
+  border: 1px solid var(--color-border-strong);
+  background: transparent;
+}

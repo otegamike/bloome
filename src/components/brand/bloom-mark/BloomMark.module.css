@@ -1,0 +1,56 @@
+.bloom {
+  flex-shrink: 0;
+}
+
+.petal {
+  fill: var(--color-primary-light);
+  fill-opacity: 0.9;
+  stroke: var(--color-primary);
+  stroke-opacity: 0.35;
+  stroke-width: 1;
+  mix-blend-mode: multiply;
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+}
+
+.core {
+  fill: var(--color-accent);
+}
+
+.bloom[data-open="true"] .petal {
+  animation: bloom-open 600ms var(--ease-spring) both;
+}
+
+.bloom[data-open="true"] g:nth-child(2) .petal {
+  animation-delay: 60ms;
+}
+
+.bloom[data-open="true"] g:nth-child(3) .petal {
+  animation-delay: 120ms;
+}
+
+.bloom[data-open="true"] g:nth-child(4) .petal {
+  animation-delay: 180ms;
+}
+
+.bloom[data-open="true"] g:nth-child(5) .petal {
+  animation-delay: 240ms;
+}
+
+.bloom[data-open="true"] .core {
+  animation: core-pulse 400ms var(--ease-out) 300ms both;
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+}
+
+@keyframes core-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

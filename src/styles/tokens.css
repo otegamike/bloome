@@ -1,74 +1,228 @@
-/* Design tokens. Real values land in design.md — these are placeholders. */
+/* Bloome design tokens. Source of truth: design.md section 3.
+   Theme blocks use plain attribute selectors so any element can scope a theme
+   (this is how the theme picker previews each theme live). */
 
-:root[data-theme="blush"] {
-  --bg: #fdf6f7;
-  --bg-soft: #fbeef0;
-  --surface: #ffffff;
-  --text: #4a3440;
-  --text-muted: #a08692;
-  --primary: #e8a0b4;
-  --primary-soft: #f6d3dd;
-  --accent: #c98aa0;
-  --border: #f2dbe1;
-  --missed: #f3b8c2;
-  --radius: 1rem;
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
+:root {
+  /* Typography */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-nunito), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-md: 1rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-display: clamp(2rem, 6vw, 3.25rem);
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-cell: 16px;
+  --radius-pill: 999px;
+
+  /* Elevation (tinted by the active theme's --shadow-color) */
+  --shadow-sm: 0 1px 2px rgb(var(--shadow-color) / 0.08), 0 1px 1px rgb(var(--shadow-color) / 0.04);
+  --shadow-md: 0 6px 16px -4px rgb(var(--shadow-color) / 0.16), 0 2px 4px rgb(var(--shadow-color) / 0.06);
+  --shadow-lg: 0 18px 40px -12px rgb(var(--shadow-color) / 0.28);
+  --shadow-cta: 0 10px 24px -8px rgb(var(--shadow-color) / 0.45);
+  --shadow-inset: inset 0 2px 6px rgb(var(--shadow-color) / 0.08);
+  --ring: 0 0 0 3px var(--color-bg), 0 0 0 5px var(--color-focus);
+
+  /* Motion */
+  --dur-fast: 120ms;
+  --dur-base: 220ms;
+  --dur-slow: 420ms;
+  --dur-ripple: 700ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Layout */
+  --header-height: 60px;
+  --nav-height: 64px;
+  --content-max: 1040px;
+  --z-header: 20;
+  --z-nav: 20;
+  --z-sheet: 40;
+  --z-toast: 60;
 }
 
-:root[data-theme="rose"] {
-  --bg: #faf3f0;
-  --bg-soft: #f6e7e1;
-  --surface: #ffffff;
-  --text: #50333a;
-  --text-muted: #a98a8f;
-  --primary: #d77f93;
-  --primary-soft: #f2c4cf;
-  --accent: #b25f78;
-  --border: #eed2d9;
-  --missed: #f3b8c2;
-  --radius: 1rem;
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
+:root,
+[data-theme="blush"] {
+  --color-bg: #fff8f6;
+  --color-bg-blob-1: #ffd9e4;
+  --color-bg-blob-2: #e6dcfa;
+  --color-bg-blob-3: #ffe9d6;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #fff0f3;
+  --color-glass: rgb(255 255 255 / 0.72);
+  --color-border: #f5dce3;
+  --color-border-strong: #ebc1ce;
+
+  --color-text: #4a3340;
+  --color-text-muted: #7e6572;
+  --color-text-faint: #b39fa9;
+  --color-text-on-primary: #ffffff;
+
+  --color-primary: #c24e78;
+  --color-primary-hover: #ac3f67;
+  --color-primary-soft: #fbe3eb;
+  --color-primary-light: #f4a6be;
+
+  --color-secondary: #9b87d6;
+  --color-secondary-soft: #eee8fb;
+  --color-secondary-ink: #5b4a93;
+  --color-accent: #f2c46d;
+  --color-accent-soft: #fdf1d6;
+
+  --color-taken: #c24e78;
+  --color-taken-soft: #fbe3eb;
+  --color-taken-ink: #8e2e54;
+  --color-missed: #e07a70;
+  --color-missed-soft: #ffe4e0;
+  --color-missed-border: #f2aba3;
+  --color-missed-ink: #b23a32;
+  --color-placebo: #b7a8e6;
+  --color-placebo-soft: #f3effb;
+  --color-placebo-ink: #6f5fa3;
+  --color-skipped-soft: #f3ecef;
+  --color-skipped-ink: #7e6572;
+
+  --color-danger: #b23a32;
+  --color-focus: #7a5ad0;
+  --shadow-color: 194 78 120;
 }
 
-:root[data-theme="peach"] {
-  --bg: #fff9f4;
-  --bg-soft: #fdf0e4;
-  --surface: #ffffff;
-  --text: #54403a;
-  --text-muted: #ab938a;
-  --primary: #eda87f;
-  --primary-soft: #f9d8bd;
-  --accent: #c98a63;
-  --border: #f3e0cd;
-  --missed: #f3b8c2;
-  --radius: 1rem;
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-md: 1rem;
+[data-theme="rose"] {
+  --color-bg: #fbeff2;
+  --color-bg-blob-1: #f6c9d8;
+  --color-bg-blob-2: #e8cfe0;
+  --color-bg-blob-3: #f8e6c8;
+  --color-surface: #fffbfc;
+  --color-surface-sunken: #f7e3e9;
+  --color-glass: rgb(255 251 252 / 0.74);
+  --color-border: #ebcbd5;
+  --color-border-strong: #dda9ba;
+
+  --color-text: #3f1f2e;
+  --color-text-muted: #744a5d;
+  --color-text-faint: #ad8799;
+  --color-text-on-primary: #ffffff;
+
+  --color-primary: #a63a63;
+  --color-primary-hover: #8e2d52;
+  --color-primary-soft: #f7dce5;
+  --color-primary-light: #d98ba8;
+
+  --color-secondary: #8e5c7a;
+  --color-secondary-soft: #ebd9e4;
+  --color-secondary-ink: #5e3550;
+  --color-accent: #c9a24d;
+  --color-accent-soft: #f6ebcb;
+
+  --color-taken: #a63a63;
+  --color-taken-soft: #f7dce5;
+  --color-taken-ink: #7b2447;
+  --color-missed: #dd7468;
+  --color-missed-soft: #ffe3de;
+  --color-missed-border: #efa79e;
+  --color-missed-ink: #a8352e;
+  --color-placebo: #c79bb8;
+  --color-placebo-soft: #f3e5ec;
+  --color-placebo-ink: #7e4d6b;
+  --color-skipped-soft: #f2e8eb;
+  --color-skipped-ink: #7a5a68;
+
+  --color-danger: #a8352e;
+  --color-focus: #6b46c1;
+  --shadow-color: 166 58 99;
+}
+
+[data-theme="peach"] {
+  --color-bg: #fffbf7;
+  --color-bg-blob-1: #ffdcc8;
+  --color-bg-blob-2: #dcebdd;
+  --color-bg-blob-3: #fff0c9;
+  --color-surface: #ffffff;
+  --color-surface-sunken: #fff3ea;
+  --color-glass: rgb(255 255 255 / 0.74);
+  --color-border: #f6e3d4;
+  --color-border-strong: #ebc8ae;
+
+  --color-text: #3e3631;
+  --color-text-muted: #7a6d63;
+  --color-text-faint: #b8aba0;
+  --color-text-on-primary: #ffffff;
+
+  --color-primary: #b9562f;
+  --color-primary-hover: #a24a27;
+  --color-primary-soft: #ffe6d8;
+  --color-primary-light: #f4a883;
+
+  --color-secondary: #7fa38a;
+  --color-secondary-soft: #e5f0e8;
+  --color-secondary-ink: #3f6b52;
+  --color-accent: #f2d58a;
+  --color-accent-soft: #fdf3d4;
+
+  --color-taken: #4f8a67;
+  --color-taken-soft: #e3f1e8;
+  --color-taken-ink: #2f6347;
+  --color-missed: #e4786b;
+  --color-missed-soft: #ffe3de;
+  --color-missed-border: #f4a99f;
+  --color-missed-ink: #b03a30;
+  --color-placebo: #c9b79f;
+  --color-placebo-soft: #f6f0e7;
+  --color-placebo-ink: #7f6f5c;
+  --color-skipped-soft: #f1eee8;
+  --color-skipped-ink: #776b61;
+
+  --color-danger: #b03a30;
+  --color-focus: #2f6fb3;
+  --shadow-color: 185 86 47;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 1ms;
+    --dur-base: 1ms;
+    --dur-slow: 1ms;
+    --dur-ripple: 1ms;
+  }
+
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms;
-    animation-iteration-count: 1;
-    transition-duration: 0.01ms;
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .atmosphere,
+  .ripple,
+  .ripple2 {
+    display: none;
   }
 }

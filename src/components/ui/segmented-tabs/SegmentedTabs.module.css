@@ -1,0 +1,96 @@
+.container {
+  position: relative;
+  display: flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-sunken);
+}
+
+.indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 2);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform 280ms var(--ease-out);
+  pointer-events: none;
+}
+
+.container[data-count="3"] .indicator {
+  width: calc((100% - 8px) / 3);
+}
+
+.container[data-count="4"] .indicator {
+  width: calc((100% - 8px) / 4);
+}
+
+.container[data-count="5"] .indicator {
+  width: calc((100% - 8px) / 5);
+}
+
+.container[data-count="2"][data-active="1"] .indicator {
+  transform: translateX(100%);
+}
+
+.container[data-count="3"][data-active="1"] .indicator {
+  transform: translateX(100%);
+}
+
+.container[data-count="3"][data-active="2"] .indicator {
+  transform: translateX(200%);
+}
+
+.container[data-count="4"][data-active="1"] .indicator {
+  transform: translateX(100%);
+}
+
+.container[data-count="4"][data-active="2"] .indicator {
+  transform: translateX(200%);
+}
+
+.container[data-count="4"][data-active="3"] .indicator {
+  transform: translateX(300%);
+}
+
+.container[data-count="5"][data-active="1"] .indicator {
+  transform: translateX(100%);
+}
+
+.container[data-count="5"][data-active="2"] .indicator {
+  transform: translateX(200%);
+}
+
+.container[data-count="5"][data-active="3"] .indicator {
+  transform: translateX(300%);
+}
+
+.container[data-count="5"][data-active="4"] .indicator {
+  transform: translateX(400%);
+}
+
+.tab {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tab[data-active="true"] {
+  color: var(--color-text);
+}
+
+.tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
