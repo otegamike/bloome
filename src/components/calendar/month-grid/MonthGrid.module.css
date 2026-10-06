@@ -131,6 +131,8 @@
   line-height: 1;
 }
 
+
+
 .bud {
   position: absolute;
   top: 6px;
@@ -152,6 +154,22 @@
   transform: translateY(20%);
   color: var(--color-placebo-ink);
 }
+
+@media (width < 400px) {
+  .date {
+    font-size: var(--text-xs);
+  }
+
+  .glyph {
+    width: 50%;
+    height: 50%;
+  }
+
+  .bud {
+    transform: scale(0.8) translateY(-25%);
+  }
+}
+
 
 .ripple,
 .ripple2 {

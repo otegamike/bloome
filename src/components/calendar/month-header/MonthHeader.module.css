@@ -32,6 +32,8 @@
   box-shadow: var(--ring);
 }
 
+
+
 .title {
   flex: 1;
   font-family: var(--font-display);
@@ -45,6 +47,8 @@
     font-size: var(--text-3xl);
   }
 }
+
+
 
 .year {
   font-family: var(--font-body);
@@ -73,6 +77,25 @@
 
 .todaySlot {
   width: 1px;
+}
+
+@media (width < 400px) {
+  .round {
+    width: 36px;
+    height: 36px;
+  }
+
+  .todayPill {
+    min-height: 36px;
+  }
+
+  .title {
+    font-size: var(--text-xl);
+  }
+
+  .year {
+    font-size: var(--text-sm);
+  }
 }
 
 @keyframes title-in {
