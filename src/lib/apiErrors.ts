@@ -8,10 +8,12 @@ import type { ApiErrorBody } from "@/types/api";
 /** Typed HTTP error thrown from services; routes map it to a JSON response. */
 export class ApiError extends Error {
   status: number;
+  headers?: Record<string, string>;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, headers?: Record<string, string>) {
     super(message);
     this.status = status;
+    this.headers = headers;
   }
 }
 
@@ -19,8 +21,21 @@ export function badRequest(message: string): ApiError {
   return new ApiError(400, message);
 }
 
-export function unauthorized(message = "Please log in"): ApiError {
-  return new ApiError(401, message);
+export function unauthorized(
+  message = "Please log in",
+  headers?: Record<string, string>
+): ApiError {
+  return new ApiError(401, message, headers);
+}
+
+export function forbidden(message = "Forbidden"): ApiError {
+  return new ApiError(403, message);
+}
+
+export function tooManyRequests(retryAfterSeconds: number): ApiError {
+  return new ApiError(429, "Too many requests. Try again soon.", {
+    "Retry-After": String(Math.max(1, retryAfterSeconds)),
+  });
 }
 
 export function notFound(message = "Not found"): ApiError {
@@ -48,7 +63,13 @@ function isDuplicateKey(error: unknown): boolean {
 export function handleRouteError(error: unknown): NextResponse {
   if (error instanceof ApiError) {
     const body: ApiErrorBody = { error: error.message };
-    return NextResponse.json(body, { status: error.status });
+    const response = NextResponse.json(body, { status: error.status });
+    if (error.headers) {
+      for (const [name, value] of Object.entries(error.headers)) {
+        response.headers.set(name, value);
+      }
+    }
+    return response;
   }
   if (error instanceof ZodError) {
     const fields: Record<string, string[]> = {};

@@ -9,12 +9,14 @@ import { Appearance } from "@/components/settings/appearance/Appearance";
 import { Account } from "@/components/settings/account/Account";
 import { Reminders } from "@/components/settings/reminders/Reminders";
 import { Packs } from "@/components/settings/packs/Packs";
+import { Shortcuts } from "@/components/settings/shortcuts/Shortcuts";
 import styles from "./SettingsShell.module.css";
 
 const TABS = [
   { value: "profile", label: "Profile" },
   { value: "packs", label: "Packs" },
   { value: "reminders", label: "Reminders" },
+  { value: "shortcuts", label: "Shortcuts" },
   { value: "appearance", label: "Appearance" },
   { value: "account", label: "Account" },
 ] as const;
@@ -67,6 +69,7 @@ function SettingsShellInner() {
           {active === "appearance" ? <Appearance /> : null}
           {active === "account" ? <Account /> : null}
           {active === "reminders" ? <Reminders /> : null}
+          {active === "shortcuts" ? <Shortcuts /> : null}
           {active === "packs" ? <Packs /> : null}
         </div>
       </div>

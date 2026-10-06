@@ -1,6 +1,18 @@
 import type { CalendarDayLog, MeResponse, PackDTO } from "@/types/api";
 import { addDays, todayInTz } from "@/lib/shared/dates";
 
+export interface MockShortcutToken {
+  id: string;
+  label: string;
+  lastFour: string;
+  /** Mock-only: the real server returns the secret once and never again. */
+  secret: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+  revokedAt: string | null;
+}
+
 export interface MockState {
   me: MeResponse;
   packs: PackDTO[];
@@ -8,6 +20,8 @@ export interface MockState {
   pushEndpoints: string[];
   pushTestAt: number | null;
   packSeq: number;
+  shortcutTokens: MockShortcutToken[];
+  tokenSeq: number;
 }
 
 const STORAGE_KEY = "bloome.mockState.v1";
@@ -62,7 +76,7 @@ function seed(): MockState {
       providers: ["credentials"],
       timezone,
       theme: "blush",
-      reminder: { enabled: false, time: "20:00" },
+      reminder: { enabled: false, time: "20:00", onPlaceboDays: true },
       pushDeviceCount: 0,
     },
     packs: [pack],
@@ -70,6 +84,8 @@ function seed(): MockState {
     pushEndpoints: [],
     pushTestAt: null,
     packSeq: 2,
+    shortcutTokens: [],
+    tokenSeq: 1,
   };
 }
 
@@ -82,6 +98,14 @@ export function loadMockState(): MockState {
     if (raw) {
       const parsed = JSON.parse(raw) as MockState;
       if (parsed.me && Array.isArray(parsed.packs) && parsed.logs) {
+        // States saved before the placebo setting existed lack the field.
+        parsed.me.reminder = {
+          enabled: parsed.me.reminder.enabled,
+          time: parsed.me.reminder.time,
+          onPlaceboDays: parsed.me.reminder.onPlaceboDays ?? true,
+        };
+        parsed.shortcutTokens = Array.isArray(parsed.shortcutTokens) ? parsed.shortcutTokens : [];
+        parsed.tokenSeq = typeof parsed.tokenSeq === "number" ? parsed.tokenSeq : 1;
         return parsed;
       }
     }

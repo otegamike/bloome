@@ -153,7 +153,7 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
       ) : null}
 
       {calendarDay?.state === "placebo" ? (
-        <p className={styles.info}>Placebo day · nothing to take today</p>
+        <p className={styles.info}>Placebo day 🌙 · Nothing to log today.</p>
       ) : null}
       {calendarDay?.state === "upcoming" ? (
         <p className={styles.info}>That day hasn&apos;t arrived yet</p>

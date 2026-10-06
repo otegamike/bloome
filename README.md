@@ -62,8 +62,27 @@ Put the public key in both `VAPID_PUBLIC_KEY` and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
 ## Reminders
 
 - Set a daily time in settings and opt into browser push. The external scheduler calls `GET /api/cron/reminders` about every minute; users whose local time has passed their reminder time (within a 2-hour grace window) get one generic notification per day: no mention of pills anywhere in the text.
-- Only active pill days trigger reminders. Placebo days, days before your first pack, and days you already logged are skipped.
+- Reminder rules: unlogged active days always remind; logged days and days outside any pack never do; placebo days remind only when "Remind me on placebo days too" is on (Settings → Reminders). The default is on, so existing accounts start getting placebo-day reminders after this ships.
+- The push body rotates daily through a curated bank of friendly, privacy-safe lines (one per user per local day, no repeats until the bank is used up). The same rotation powers Apple Shortcuts below.
 - Scale note: each sweep loads all reminder-enabled users, which is fine for thousands of users. Past that, bucket users by reminder time.
+
+## Apple Shortcuts
+
+Get a gentle daily reminder on your iPhone without browser push:
+
+1. In Settings → Shortcuts, tap **Create access token** (name it, pick an expiry). The secret shows **once** — save it somewhere safe.
+2. In the Shortcuts app, build a **Time of Day** automation (daily, Run Immediately): **Get Contents of URL** → `GET https://<your-domain>/api/shortcuts/status` with header `Authorization: Bearer <token>`.
+3. Read the `remind` number: **If** it **is** `1`, **Show Notification** with the `title` and `message` from the same response.
+
+Response shape: `{ "ok": true, "date": "2026-10-06", "remind": 1, "marked": 0, "title": "Bloome", "message": "Your daily moment is waiting 🌸" }`. `remind` follows the reminder rules above (`marked` is `0` on placebo days, which can't be logged). Append `?tz=Pacific/Auckland` when travelling to decide "today" in another timezone. Notification text never reveals what the app tracks.
+
+Security notes:
+
+- The token travels in the `Authorization` header only — never in the URL (a `token` query parameter is rejected with `400`).
+- Only the sha256 hash of the secret is stored; the secret is returned once at creation and never again. Wrong, revoked, and expired tokens all answer with the identical `401`.
+- Tokens are read-only (`status:read`): they can't log, edit, or delete anything. Up to 5 active tokens per user; revoke any time in Settings. Deleting your account deletes its tokens.
+- Failed authentication is throttled (20 per 15 minutes per IP); successful calls are limited to 120 per hour per token.
+- Message review (optional): `npm run messages:review` lists LLM-suggested notification lines awaiting approval (`--approve <id>,…`, `--reject <id>`, `--approve-all`). The LLM generation script itself is not built yet; curated messages live in `src/lib/reminderMessages/pool.ts`.
 
 ## Vercel deployment
 

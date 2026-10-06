@@ -15,7 +15,7 @@ interface ProfileState {
     name?: string;
     timezone?: string;
     theme?: ThemeName;
-    reminder?: { enabled?: boolean; time?: string };
+    reminder?: { enabled?: boolean; time?: string; onPlaceboDays?: boolean };
   }) => Promise<boolean>;
   deleteAccount: () => Promise<boolean>;
   firstName: () => string;
@@ -50,6 +50,10 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
           reminder: {
             enabled: input.reminder?.enabled ?? previous.reminder.enabled,
             time: input.reminder?.time ?? previous.reminder.time,
+            onPlaceboDays:
+              input.reminder?.onPlaceboDays ??
+              previous.reminder.onPlaceboDays ??
+              true,
           },
         },
       });

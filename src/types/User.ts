@@ -9,6 +9,8 @@ export type AuthProvider = "credentials" | "google";
 export interface ReminderShape {
   enabled: boolean;
   time: string;
+  /** Remind on placebo days too. Missing (pre-feature docs) reads as true. */
+  onPlaceboDays?: boolean;
   lastSentDay: DayString | null;
 }
 

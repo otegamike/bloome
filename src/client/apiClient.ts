@@ -2,15 +2,18 @@ import { isMockMode } from "@/client/mockMode";
 import {
   MockApiError,
   mockCreatePack,
+  mockCreateShortcutToken,
   mockDeleteLog,
   mockDeleteMe,
   mockDeletePack,
   mockGetCalendar,
   mockGetMe,
   mockListPacks,
+  mockListShortcutTokens,
   mockPatchMe,
   mockPutLog,
   mockRegister,
+  mockRevokeShortcutToken,
   mockSendTestPush,
   mockSubscribePush,
   mockUnsubscribePush,
@@ -22,6 +25,7 @@ import type {
   CalendarResponse,
   MeResponse,
   PackDTO,
+  ShortcutTokenDTO,
 } from "@/types/api";
 import type { LogStatus, ThemeName } from "@/types";
 
@@ -40,8 +44,7 @@ function toClientError(status: number, body: unknown): ApiClientError {
   if (body && typeof body === "object") {
     const record = body as Partial<ApiErrorBody>;
     if (typeof record.error === "string" && record.error) {
-      const fields =
-        record.fields && typeof record.fields === "object" ? record.fields : undefined;
+      const fields = record.fields && typeof record.fields === "object" ? record.fields : undefined;
       return new ApiClientError(status, record.error, fields);
     }
   }
@@ -123,7 +126,7 @@ export async function patchMe(input: {
   name?: string;
   timezone?: string;
   theme?: ThemeName;
-  reminder?: { enabled?: boolean; time?: string };
+  reminder?: { enabled?: boolean; time?: string; onPlaceboDays?: boolean };
 }): Promise<MeResponse> {
   if (isMockMode()) {
     return mock(() => mockPatchMe(input));
@@ -159,7 +162,7 @@ export async function createPack(input: {
 
 export async function updatePack(
   id: string,
-  input: { name?: string; activeDays?: number; placeboDays?: number; startDay?: string },
+  input: { name?: string; activeDays?: number; placeboDays?: number; startDay?: string }
 ): Promise<{ pack: PackDTO }> {
   if (isMockMode()) {
     return mock(() => mockUpdatePack(id, input));
@@ -186,7 +189,7 @@ export async function getCalendar(month: string): Promise<CalendarResponse> {
 
 export async function putLog(
   day: string,
-  input: { status: LogStatus; note?: string },
+  input: { status: LogStatus; note?: string }
 ): Promise<{ day: CalendarDay }> {
   if (isMockMode()) {
     return mock(() => mockPutLog(day, input));
@@ -232,4 +235,31 @@ export async function sendTestPush(): Promise<{ sent: number }> {
     return mock(() => mockSendTestPush());
   }
   return request<{ sent: number }>("/api/push/test", { method: "POST", body: "{}" });
+}
+
+export async function listShortcutTokens(): Promise<{ tokens: ShortcutTokenDTO[] }> {
+  if (isMockMode()) {
+    return mock(() => mockListShortcutTokens());
+  }
+  return request<{ tokens: ShortcutTokenDTO[] }>("/api/shortcuts/tokens");
+}
+
+export async function createShortcutToken(input: {
+  label: string;
+  expiresInDays: 30 | 90 | 365 | null;
+}): Promise<{ token: ShortcutTokenDTO; secret: string }> {
+  if (isMockMode()) {
+    return mock(() => mockCreateShortcutToken(input));
+  }
+  return request<{ token: ShortcutTokenDTO; secret: string }>("/api/shortcuts/tokens", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function revokeShortcutToken(id: string): Promise<void> {
+  if (isMockMode()) {
+    return mock(() => mockRevokeShortcutToken(id));
+  }
+  return request<void>(`/api/shortcuts/tokens/${id}`, { method: "DELETE" });
 }

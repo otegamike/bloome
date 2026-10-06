@@ -8,6 +8,7 @@ import { connectDB } from "@/lib/db";
 import AuthAttemptModel from "@/models/AuthAttempt";
 import PillLogModel from "@/models/PillLog";
 import PillPackModel from "@/models/PillPack";
+import ShortcutTokenModel from "@/models/ShortcutToken";
 import UserModel, { type UserDoc } from "@/models/User";
 import type { MeUpdateInput, RegisterInput } from "@/lib/shared/schemas";
 import type { MeResponse } from "@/types/api";
@@ -15,6 +16,7 @@ import type { MeResponse } from "@/types/api";
 void AuthAttemptModel;
 void PillLogModel;
 void PillPackModel;
+void ShortcutTokenModel;
 void UserModel;
 
 export function normalizeEmail(email: string): string {
@@ -30,7 +32,11 @@ export function toMeResponse(doc: UserDoc): MeResponse {
     providers: doc.providers as ("credentials" | "google")[],
     timezone: doc.timezone,
     theme: doc.theme as MeResponse["theme"],
-    reminder: { enabled: doc.reminder.enabled, time: doc.reminder.time },
+    reminder: {
+      enabled: doc.reminder.enabled,
+      time: doc.reminder.time,
+      onPlaceboDays: doc.reminder.onPlaceboDays ?? true,
+    },
     pushDeviceCount: doc.pushSubscriptions.length,
   };
 }
@@ -124,15 +130,22 @@ export async function updateMe(userId: string, input: MeUpdateInput): Promise<Me
   await connectDB();
   const user = await UserModel.findById(new Types.ObjectId(userId));
   if (!user) throw notFound("Account not found");
-  if (input.name !== undefined) user.name = input.name;
-  if (input.timezone !== undefined) user.timezone = input.timezone;
-  if (input.theme !== undefined) user.theme = input.theme;
-  if (input.reminder !== undefined) {
-    user.reminder.enabled = input.reminder.enabled;
-    user.reminder.time = input.reminder.time;
+  // Partial reminder updates use dotted-path $set so sibling fields
+  // (including lastSentDay) are never wiped when only some keys arrive.
+  const set: Record<string, unknown> = {};
+  if (input.name !== undefined) set.name = input.name;
+  if (input.timezone !== undefined) set.timezone = input.timezone;
+  if (input.theme !== undefined) set.theme = input.theme;
+  if (input.reminder?.enabled !== undefined) set["reminder.enabled"] = input.reminder.enabled;
+  if (input.reminder?.time !== undefined) set["reminder.time"] = input.reminder.time;
+  if (input.reminder?.onPlaceboDays !== undefined)
+    set["reminder.onPlaceboDays"] = input.reminder.onPlaceboDays;
+  if (Object.keys(set).length > 0) {
+    await UserModel.updateOne({ _id: new Types.ObjectId(userId) }, { $set: set });
   }
-  await user.save();
-  return toMeResponse(user);
+  const updated = await UserModel.findById(new Types.ObjectId(userId));
+  if (!updated) throw notFound("Account not found");
+  return toMeResponse(updated);
 }
 
 /** Remove every row that belongs to the user, then the user. */
@@ -141,5 +154,6 @@ export async function deleteAccount(userId: string): Promise<void> {
   const id = new Types.ObjectId(userId);
   await PillLogModel.deleteMany({ userId: id });
   await PillPackModel.deleteMany({ userId: id });
+  await ShortcutTokenModel.deleteMany({ userId: id });
   await UserModel.deleteOne({ _id: id });
 }

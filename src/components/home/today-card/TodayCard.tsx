@@ -134,10 +134,13 @@ export function TodayCard() {
       ) : null}
 
       {day?.state === "placebo" ? (
-        <p className={styles.placebo}>
-          <Moon size={20} />
-          Placebo day · nothing to take today
-        </p>
+        <div className={styles.placebo}>
+          <p className={styles.placeboTitle}>
+            <Moon size={20} />
+            Placebo day 🌙
+          </p>
+          <p className={styles.placeboSub}>Nothing to log today.</p>
+        </div>
       ) : null}
 
       {(day === null || day?.state === "outside") && (

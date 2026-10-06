@@ -27,10 +27,10 @@ function ensureVapid(): void {
   vapidReady = true;
 }
 
-function payload(): string {
+function payload(body: string): string {
   return JSON.stringify({
     title: APP_NAME,
-    body: "Your daily check-in is ready 🌸",
+    body,
     tag: "daily-reminder",
     url: "/",
   });
@@ -41,19 +41,24 @@ export interface SendResult {
   removed: number;
 }
 
-/** Send to every stored subscription; prune dead ones (404/410). */
-export async function sendToUser(user: UserDoc): Promise<SendResult> {
+/**
+ * Send to every stored subscription; prune dead ones (404/410). Callers pass
+ * the day's rotating message; the default fixed line is only for test pings.
+ */
+export async function sendToUser(
+  user: UserDoc,
+  body: string = "Your daily check-in is ready 🌸"
+): Promise<SendResult> {
   ensureVapid();
-  const body = payload();
+  const payloadBody = payload(body);
   const dead: string[] = [];
   let sent = 0;
   for (const sub of user.pushSubscriptions) {
     try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: sub.keys },
-        body,
-        { TTL: 3600, urgency: "normal" },
-      );
+      await webpush.sendNotification({ endpoint: sub.endpoint, keys: sub.keys }, payloadBody, {
+        TTL: 3600,
+        urgency: "normal",
+      });
       sent += 1;
     } catch (error) {
       const status = (error as { statusCode?: unknown }).statusCode;
@@ -74,7 +79,7 @@ export async function sendToUser(user: UserDoc): Promise<SendResult> {
 export async function subscribeDevice(
   userId: string,
   input: PushSubscriptionInput,
-  userAgent: string | null,
+  userAgent: string | null
 ): Promise<void> {
   await connectDB();
   const user = await UserModel.findById(new Types.ObjectId(userId));

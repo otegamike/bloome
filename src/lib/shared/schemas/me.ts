@@ -8,8 +8,9 @@ export const meUpdateSchema = z.object({
   theme: z.enum(["blush", "rose", "peach"]).optional(),
   reminder: z
     .object({
-      enabled: z.boolean(),
-      time: timeString,
+      enabled: z.boolean().optional(),
+      time: timeString.optional(),
+      onPlaceboDays: z.boolean().optional(),
     })
     .optional(),
 });

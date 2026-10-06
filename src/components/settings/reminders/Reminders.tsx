@@ -10,6 +10,7 @@ import { Share } from "@/components/icons/Share";
 import { Button } from "@/components/ui/button/Button";
 import { Skeleton } from "@/components/ui/skeleton/Skeleton";
 import { Switch } from "@/components/ui/switch/Switch";
+import { PlaceboDaysCard } from "@/components/settings/reminders/placebo-days-card/PlaceboDaysCard";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { usePushReminders } from "@/hooks/usePushReminders";
 import { useAlertStore } from "@/store/useAlertStore";
@@ -126,6 +127,7 @@ export function Reminders() {
           </div>
         ) : null}
       </div>
+      <PlaceboDaysCard />
       {!isStandalone ? (
         <div className={styles.card}>
           <h2 className={styles.heading}>Install Bloome</h2>

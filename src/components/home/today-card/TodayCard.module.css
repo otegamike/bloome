@@ -95,11 +95,23 @@
 
 .placebo {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+  color: var(--color-placebo-ink);
+}
+
+.placeboTitle {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-top: var(--space-4);
   font-size: var(--text-base);
-  color: var(--color-placebo-ink);
+  font-weight: 700;
+}
+
+.placeboSub {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
 }
 
 .noPack {

@@ -43,6 +43,7 @@ const userSchema = new Schema<UserDoc>(
     reminder: {
       enabled: { type: Boolean, default: false },
       time: { type: String, default: "20:00" },
+      onPlaceboDays: { type: Boolean, default: true },
       lastSentDay: { type: String, default: null },
     },
     pushSubscriptions: { type: [pushSubscriptionSchema], default: [] },

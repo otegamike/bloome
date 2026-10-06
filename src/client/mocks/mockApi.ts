@@ -16,6 +16,7 @@ import type {
   CalendarResponse,
   MeResponse,
   PackDTO,
+  ShortcutTokenDTO,
 } from "@/types/api";
 import type { DayString, LogStatus, ThemeName } from "@/types";
 
@@ -90,11 +91,16 @@ export async function mockRegister(input: {
     });
   }
   if (!isValidTimezone(input.timezone)) {
-    throw new MockApiError(400, "Choose a valid timezone", { timezone: ["Choose a valid timezone"] });
+    throw new MockApiError(400, "Choose a valid timezone", {
+      timezone: ["Choose a valid timezone"],
+    });
   }
   return withState((state) => {
     if (input.email.toLowerCase() === state.me.email.toLowerCase()) {
-      throw new MockApiError(409, "We couldn't create an account with those details. If you already have one, try signing in.");
+      throw new MockApiError(
+        409,
+        "We couldn't create an account with those details. If you already have one, try signing in."
+      );
     }
     state.me.name = input.name.trim();
     state.me.email = input.email.toLowerCase();
@@ -107,7 +113,11 @@ export async function mockGetMe(): Promise<MeResponse> {
   await delay();
   return withState((state) => ({
     ...state.me,
-    reminder: { ...state.me.reminder },
+    reminder: {
+      enabled: state.me.reminder.enabled,
+      time: state.me.reminder.time,
+      onPlaceboDays: state.me.reminder.onPlaceboDays ?? true,
+    },
     pushDeviceCount: state.pushEndpoints.length,
   }));
 }
@@ -116,7 +126,7 @@ export async function mockPatchMe(input: {
   name?: string;
   timezone?: string;
   theme?: ThemeName;
-  reminder?: { enabled?: boolean; time?: string };
+  reminder?: { enabled?: boolean; time?: string; onPlaceboDays?: boolean };
 }): Promise<MeResponse> {
   await delay();
   return withState((state) => {
@@ -148,11 +158,16 @@ export async function mockPatchMe(input: {
       state.me.reminder = {
         enabled: input.reminder.enabled ?? state.me.reminder.enabled,
         time: input.reminder.time ?? state.me.reminder.time,
+        onPlaceboDays: input.reminder.onPlaceboDays ?? state.me.reminder.onPlaceboDays ?? true,
       };
     }
     return {
       ...state.me,
-      reminder: { ...state.me.reminder },
+      reminder: {
+        enabled: state.me.reminder.enabled,
+        time: state.me.reminder.time,
+        onPlaceboDays: state.me.reminder.onPlaceboDays ?? true,
+      },
       pushDeviceCount: state.pushEndpoints.length,
     };
   });
@@ -162,7 +177,9 @@ export async function mockDeleteMe(confirm: string): Promise<void> {
   await delay();
   withState((state) => {
     if (confirm !== "DELETE") {
-      throw new MockApiError(400, "Type DELETE to confirm", { confirm: ["Type DELETE to confirm"] });
+      throw new MockApiError(400, "Type DELETE to confirm", {
+        confirm: ["Type DELETE to confirm"],
+      });
     }
     const fresh = {
       ...state,
@@ -237,7 +254,7 @@ export async function mockCreatePack(input: {
 
 export async function mockUpdatePack(
   id: string,
-  input: { name?: string; activeDays?: number; placeboDays?: number; startDay?: string },
+  input: { name?: string; activeDays?: number; placeboDays?: number; startDay?: string }
 ): Promise<{ pack: PackDTO }> {
   await delay();
   return withState((state) => {
@@ -339,7 +356,7 @@ function assertLoggable(state: MockState, day: DayString): void {
 
 export async function mockPutLog(
   day: string,
-  input: { status: LogStatus; note?: string },
+  input: { status: LogStatus; note?: string }
 ): Promise<{ day: CalendarDay }> {
   if (consumeMockLogFailure()) {
     await delay();
@@ -409,5 +426,119 @@ export async function mockSendTestPush(): Promise<{ sent: number }> {
     }
     state.pushTestAt = now;
     return { sent: state.pushEndpoints.length > 0 ? 1 : 0 };
+  });
+}
+
+function mockTokenSecret(): string {
+  const bytes = new Uint8Array(32);
+  if (typeof globalThis.crypto?.getRandomValues === "function") {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    for (let i = 0; i < bytes.length; i += 1) {
+      bytes[i] = Math.floor(Math.random() * 256);
+    }
+  }
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let out = "";
+  let value = 0;
+  let bits = 0;
+  for (const byte of bytes) {
+    value = (value << 8) | byte;
+    bits += 8;
+    while (bits >= 6) {
+      bits -= 6;
+      out += alphabet[(value >> bits) & 63];
+    }
+  }
+  if (bits > 0) {
+    out += alphabet[(value << (6 - bits)) & 63];
+  }
+  return `bsc_${out}`;
+}
+
+function toMockTokenDTO(token: {
+  id: string;
+  label: string;
+  lastFour: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+  expiresAt: string | null;
+}): ShortcutTokenDTO {
+  return {
+    id: token.id,
+    label: token.label,
+    lastFour: token.lastFour,
+    createdAt: token.createdAt,
+    lastUsedAt: token.lastUsedAt,
+    expiresAt: token.expiresAt,
+  };
+}
+
+function mockActiveTokens(state: MockState) {
+  const now = Date.now();
+  return state.shortcutTokens.filter(
+    (t) => !t.revokedAt && (!t.expiresAt || new Date(t.expiresAt).getTime() > now)
+  );
+}
+
+export async function mockListShortcutTokens(): Promise<{ tokens: ShortcutTokenDTO[] }> {
+  await delay();
+  return withState((state) => ({
+    tokens: mockActiveTokens(state)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .map(toMockTokenDTO),
+  }));
+}
+
+export async function mockCreateShortcutToken(input: {
+  label: string;
+  expiresInDays: 30 | 90 | 365 | null;
+}): Promise<{ token: ShortcutTokenDTO; secret: string }> {
+  await delay();
+  return withState((state) => {
+    const label = input.label?.trim() ?? "";
+    if (!label || label.length > 40) {
+      throw new MockApiError(400, "Give this token a name", { label: ["Give this token a name"] });
+    }
+    if (
+      input.expiresInDays !== null &&
+      input.expiresInDays !== 30 &&
+      input.expiresInDays !== 90 &&
+      input.expiresInDays !== 365
+    ) {
+      throw new MockApiError(400, "Pick a valid expiry", {
+        expiresInDays: ["Pick a valid expiry"],
+      });
+    }
+    if (mockActiveTokens(state).length >= 5) {
+      throw new MockApiError(409, "You already have 5 active tokens. Revoke one first.");
+    }
+    const secret = mockTokenSecret();
+    const now = new Date();
+    const token = {
+      id: `mock-token-${state.tokenSeq++}`,
+      label,
+      lastFour: secret.slice(-4),
+      secret,
+      createdAt: now.toISOString(),
+      lastUsedAt: null,
+      expiresAt:
+        input.expiresInDays === null
+          ? null
+          : new Date(now.getTime() + input.expiresInDays * 86_400_000).toISOString(),
+      revokedAt: null,
+    };
+    state.shortcutTokens.push(token);
+    return { token: toMockTokenDTO(token), secret };
+  });
+}
+
+export async function mockRevokeShortcutToken(id: string): Promise<void> {
+  await delay();
+  withState((state) => {
+    const token = state.shortcutTokens.find((t) => t.id === id);
+    if (token) {
+      token.revokedAt = new Date().toISOString();
+    }
   });
 }
