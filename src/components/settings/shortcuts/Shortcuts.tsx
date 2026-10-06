@@ -119,9 +119,9 @@ export function Shortcuts() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onCreated={() => {
-          setDialogOpen(false);
+          // Keep the dialog open: it now shows the one-time secret reveal.
+          // The success toast fires when the user dismisses it via "I've saved it".
           void refresh();
-          useAlertStore.getState().addAlert({ kind: "success", message: "Token created" });
         }}
       />
 

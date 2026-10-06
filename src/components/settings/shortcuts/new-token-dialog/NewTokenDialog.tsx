@@ -37,6 +37,9 @@ export function NewTokenDialog({ open, onClose, onCreated }: NewTokenDialogProps
   const [copied, setCopied] = useState(false);
 
   const close = () => {
+    if (secret) {
+      useAlertStore.getState().addAlert({ kind: "success", message: "Token created" });
+    }
     setLabel("My iPhone");
     setExpiry("365");
     setCreating(false);
@@ -89,7 +92,8 @@ export function NewTokenDialog({ open, onClose, onCreated }: NewTokenDialogProps
           </h2>
           <p className={styles.body}>
             This is the only time you&apos;ll see it. Anyone with this token can see whether today
-            is logged. Treat it like a password.
+            is logged. Treat it like a password. If you lose it, revoke this token and create a new
+            one.
           </p>
           <div className={styles.secretRow}>
             <input
