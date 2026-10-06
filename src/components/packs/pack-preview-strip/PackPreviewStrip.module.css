@@ -1,7 +1,11 @@
 .strip {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  --strip-dot-size: 22px;
+  --strip-column-gap: 12px;
+  --strip-row-gap: 16px;
+  --strip-arrow-size: 8px;
+  display: flex;
+  flex-direction: column;
+  row-gap: var(--strip-row-gap);
   list-style: none;
   padding: var(--space-4);
   border-radius: var(--radius-lg);
@@ -15,27 +19,75 @@
   );
 }
 
-.item {
-  display: flex;
+@media (min-width: 480px) {
+  .strip {
+    --strip-dot-size: 26px;
+    --strip-column-gap: 28px;
+    --strip-row-gap: 20px;
+    --strip-arrow-size: 10px;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(7, var(--strip-dot-size));
+  column-gap: var(--strip-column-gap);
   justify-content: center;
+}
+
+.row[data-direction="ltr"] {
+  direction: ltr;
+}
+
+.row[data-direction="rtl"] {
+  direction: rtl;
+}
+
+.slot {
+  position: relative;
+  width: var(--strip-dot-size);
+  height: var(--strip-dot-size);
+}
+
+.arrowNext,
+.arrowDown {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--strip-arrow-size);
+  height: var(--strip-arrow-size);
+  color: var(--color-text-faint);
+  pointer-events: none;
+}
+
+.arrowNext {
+  top: 50%;
+  left: calc(100% + (var(--strip-column-gap) - var(--strip-arrow-size)) / 2);
+  transform: translateY(-50%);
+}
+
+.row[data-direction="rtl"] .arrowNext {
+  left: auto;
+  right: calc(100% + (var(--strip-column-gap) - var(--strip-arrow-size)) / 2);
+  transform: translateY(-50%) scaleX(-1);
+}
+
+.arrowDown {
+  left: 50%;
+  top: calc(100% + (var(--strip-row-gap) - var(--strip-arrow-size)) / 2);
+  transform: translateX(-50%);
 }
 
 .dot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: var(--strip-dot-size);
+  height: var(--strip-dot-size);
   border-radius: 50%;
   color: #ffffff;
   transition: background-color 160ms var(--ease-out);
-}
-
-@media (max-width: 479px) {
-  .dot {
-    width: 22px;
-    height: 22px;
-  }
 }
 
 .dot[data-state="taken"] {

@@ -1,3 +1,5 @@
+import { ArrowDownIcon } from "@/components/icons/ArrowDownIcon";
+import { ArrowRightIcon } from "@/components/icons/ArrowRightIcon";
 import { Check } from "@/components/icons/Check";
 import { addDays } from "@/lib/shared/dates";
 import { getDayKind } from "@/lib/shared/cycle";
@@ -64,15 +66,62 @@ export function PackPreviewStrip(props: StripProps) {
   const dots = props.variant === "preview"
     ? previewDots(props.startDay, props.activeDays, props.placeboDays)
     : liveDots(props.days);
+  const rows = chunkIntoRows(dots);
   return (
-    <ol aria-label="Pack days" className={styles.strip}>
-      {dots.map((dot) => (
-        <li key={dot.key} role="listitem" aria-label={dot.label} className={styles.item}>
-          <span data-state={dot.dotState} aria-hidden="true" className={styles.dot}>
-            {dot.dotState === "taken" ? <Check size={10} /> : null}
-          </span>
-        </li>
+    <div role="list" aria-label="Pack days" className={styles.strip}>
+      {rows.map((row, rowIndex) => (
+        <div
+          key={rowIndex}
+          role="presentation"
+          className={styles.row}
+          data-direction={rowIndex % 2 === 0 ? "ltr" : "rtl"}
+        >
+          {row.map((dot, colIndex) => (
+            <StripSlot
+              key={dot.key}
+              dot={dot}
+              hasNext={colIndex < row.length - 1}
+              turnsDown={colIndex === row.length - 1 && rowIndex < rows.length - 1}
+            />
+          ))}
+        </div>
       ))}
-    </ol>
+    </div>
+  );
+}
+
+const DOTS_PER_ROW = 7;
+
+function chunkIntoRows<T>(items: T[]): T[][] {
+  const rows: T[][] = [];
+  for (let i = 0; i < items.length; i += DOTS_PER_ROW) {
+    rows.push(items.slice(i, i + DOTS_PER_ROW));
+  }
+  return rows;
+}
+
+interface StripSlotProps {
+  dot: Dot;
+  hasNext: boolean;
+  turnsDown: boolean;
+}
+
+function StripSlot({ dot, hasNext, turnsDown }: StripSlotProps) {
+  return (
+    <div role="listitem" aria-label={dot.label} className={styles.slot}>
+      <span data-state={dot.dotState} aria-hidden="true" className={styles.dot}>
+        {dot.dotState === "taken" ? <Check size={10} /> : null}
+      </span>
+      {hasNext ? (
+        <span aria-hidden="true" className={styles.arrowNext}>
+          <ArrowRightIcon size={10} />
+        </span>
+      ) : null}
+      {turnsDown ? (
+        <span aria-hidden="true" className={styles.arrowDown}>
+          <ArrowDownIcon size={10} />
+        </span>
+      ) : null}
+    </div>
   );
 }
