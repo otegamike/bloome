@@ -1,0 +1,71 @@
+.wrapper {
+  overscroll-behavior-y: contain;
+  min-width: 0;
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  transition: max-height var(--dur-base) var(--ease-out);
+  transition-property: max-height, opacity;
+}
+
+.indicator[data-state="pulling"] {
+  max-height: 2rem;
+  opacity: 1;
+}
+
+.indicator[data-state="ready"] {
+  max-height: 2.5rem;
+  opacity: 1;
+  color: var(--color-text);
+}
+
+.indicator[data-state="refreshing"] {
+  max-height: 2.5rem;
+  opacity: 1;
+}
+
+.label {
+  display: block;
+  min-height: 1.25rem;
+}
+
+.spinner {
+  display: block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--color-border);
+  border-top-color: var(--color-primary);
+  animation-name: pull-spin;
+  animation-duration: 0.8s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pull-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    transition: none;
+  }
+
+  .spinner {
+    animation: none;
+  }
+}

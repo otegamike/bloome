@@ -23,6 +23,7 @@ interface CalendarState {
   justChanged: Record<string, { kind: JustKind; at: number } | undefined>;
   pending: Record<string, boolean | undefined>;
   epoch: number;
+  lastFetchedAt: Record<string, number | undefined>;
   fetchMonth: (month: string, opts?: { force?: boolean; prefetch?: boolean }) => Promise<void>;
   ensureRange: (fromDay: DayString, toDay: DayString) => Promise<void>;
   prefetchAdjacent: (month: string) => void;
@@ -31,6 +32,7 @@ interface CalendarState {
   removeLog: (day: DayString) => Promise<void>;
   invalidateAll: () => void;
   refreshIfDayChanged: () => void;
+  refreshVisible: (months: string[]) => void;
 }
 
 function monthOf(day: DayString): string {
@@ -101,6 +103,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   justChanged: {},
   pending: {},
   epoch: 0,
+  lastFetchedAt: {},
 
   fetchMonth: async (month, opts) => {
     const cached = get().months[month];
@@ -124,6 +127,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
         months: { ...state.months, [month]: { status: "ready", days: response.days } },
         today: response.today,
         timezone: response.timezone,
+        lastFetchedAt: { ...state.lastFetchedAt, [month]: Date.now() },
       }));
       // Prefetched months never prefetch further: otherwise every load
       // chains outward until the server's date window stops it.
@@ -335,7 +339,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
 
   invalidateAll: () => {
     const visible = get().today?.slice(0, 7);
-    set((state) => ({ months: {}, epoch: state.epoch + 1 }));
+    set((state) => ({ months: {}, lastFetchedAt: {}, epoch: state.epoch + 1 }));
     if (visible) {
       void get().fetchMonth(visible, { force: true });
     }
@@ -355,6 +359,12 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     }
     if (fresh !== today) {
       get().invalidateAll();
+    }
+  },
+
+  refreshVisible: (months) => {
+    for (const month of months) {
+      void get().fetchMonth(month, { force: true });
     }
   },
 }));

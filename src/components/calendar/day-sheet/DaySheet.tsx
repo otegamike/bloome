@@ -9,6 +9,7 @@ import { SegmentedTabs } from "@/components/ui/segmented-tabs/SegmentedTabs";
 import { longDateLabel } from "@/client/calendarGrid";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useCalendarStore } from "@/store/useCalendarStore";
+import { useCalendarDay } from "@/hooks/useCalendarDay";
 import type { DayString, LogStatus } from "@/types";
 import styles from "./DaySheet.module.css";
 
@@ -26,7 +27,7 @@ function formatTime(iso: string, timezone: string): string {
 
 export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () => void }) {
   const titleId = useId();
-  const calendarDay = useCalendarStore((s) => (day ? s.getDay(day) : null));
+  const calendarDay = useCalendarDay(day);
   const timezone = useCalendarStore((s) => s.timezone);
   const today = useCalendarStore((s) => s.today);
   const markDay = useCalendarStore((s) => s.markDay);

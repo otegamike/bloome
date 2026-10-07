@@ -8,6 +8,7 @@ import { CalendarBoard } from "@/components/calendar/calendar-board/CalendarBoar
 import { Legend } from "@/components/calendar/legend/Legend";
 import { CatchUpBanner } from "@/components/home/catch-up-banner/CatchUpBanner";
 import { PackStrip } from "@/components/home/pack-strip/PackStrip";
+import { PullRefresh } from "@/components/home/pull-refresh/PullRefresh";
 import { TimezoneBanner } from "@/components/home/timezone-banner/TimezoneBanner";
 import { TodayCard } from "@/components/home/today-card/TodayCard";
 import { Skeleton } from "@/components/ui/skeleton/Skeleton";
@@ -65,21 +66,59 @@ export function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timezone]);
 
-  // Day rollover: refresh at the next local midnight, on focus, and when visible.
+  // Day rollover + stale-data refresh. Midnight and day changes use
+  // refreshIfDayChanged; returning after a long time away (same day, old
+  // data) does a throttled soft refetch of the visible month and packs.
   useEffect(() => {
+    const SOFT_REFRESH_MS = 5 * 60 * 1000;
+    const hiddenAtRef = { current: null as number | null };
+    const lastSoftRef = { current: Date.now() };
     const tz = timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
     const timer = window.setTimeout(() => refreshIfDayChanged(), msToNextMidnight(tz));
+
+    const softRefresh = (force: boolean) => {
+      if (typeof navigator !== "undefined" && "onLine" in navigator && !navigator.onLine) {
+        return;
+      }
+      const now = Date.now();
+      if (!force && now - lastSoftRef.current < SOFT_REFRESH_MS) {
+        return;
+      }
+      lastSoftRef.current = now;
+      const state = useCalendarStore.getState();
+      const zone = state.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const visible = state.today?.slice(0, 7) ?? currentMonthInTz(zone);
+      state.refreshVisible([visible]);
+      void usePackStore.getState().fetchPacks();
+    };
+
     const onVisible = () => {
-      if (document.visibilityState === "visible") {
-        refreshIfDayChanged();
+      if (document.visibilityState === "hidden") {
+        hiddenAtRef.current = Date.now();
+        return;
+      }
+      useCalendarStore.getState().refreshIfDayChanged();
+      const hiddenFor = hiddenAtRef.current ? Date.now() - hiddenAtRef.current : 0;
+      hiddenAtRef.current = null;
+      if (hiddenFor >= SOFT_REFRESH_MS) {
+        softRefresh(true);
       }
     };
+    const onFocus = () => {
+      useCalendarStore.getState().refreshIfDayChanged();
+      softRefresh(false);
+    };
+    const onOnline = () => {
+      softRefresh(false);
+    };
     document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", refreshIfDayChanged);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("online", onOnline);
     return () => {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", refreshIfDayChanged);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
     };
   }, [timezone, refreshIfDayChanged]);
 
@@ -91,28 +130,40 @@ export function HomeScreen() {
 
   const loading = meStatus === "loading" || packsStatus === "loading";
 
+  const handlePullRefresh = async () => {
+    const state = useCalendarStore.getState();
+    const zone = state.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const visible = state.today?.slice(0, 7) ?? currentMonthInTz(zone);
+    await Promise.allSettled([
+      state.fetchMonth(visible, { force: true }),
+      usePackStore.getState().fetchPacks(),
+    ]);
+  };
+
   return (
     <AppShell>
       <div className={styles.home}>
         <TimezoneBanner />
         <CatchUpBanner />
-        {loading ? (
-          <div className={styles.loading}>
-            <Skeleton variant="card" />
-            <Skeleton variant="card" />
-          </div>
-        ) : (
-          <div className={styles.columns}>
-            <div className={styles.left}>
-              <TodayCard />
-              <Legend />
+        <PullRefresh onRefresh={handlePullRefresh}>
+          {loading ? (
+            <div className={styles.loading}>
+              <Skeleton variant="card" />
+              <Skeleton variant="card" />
             </div>
-            <div className={styles.right}>
-              <CalendarBoard />
-              <PackStrip />
+          ) : (
+            <div className={styles.columns}>
+              <div className={styles.left}>
+                <TodayCard />
+                <Legend />
+              </div>
+              <div className={styles.right}>
+                <CalendarBoard />
+                <PackStrip />
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </PullRefresh>
       </div>
     </AppShell>
   );

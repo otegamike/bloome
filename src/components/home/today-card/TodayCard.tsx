@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton/Skeleton";
 import { useCalendarStore } from "@/store/useCalendarStore";
 import { usePackStore } from "@/store/usePackStore";
 import { useProfileStore } from "@/store/useProfileStore";
+import { useCalendarDay } from "@/hooks/useCalendarDay";
 import styles from "./TodayCard.module.css";
 
 function greeting(firstName: string, hour: number): string {
@@ -68,9 +69,9 @@ export function TodayCard() {
   const router = useRouter();
   const today = useCalendarStore((s) => s.today);
   const timezone = useCalendarStore((s) => s.timezone);
-  const getDay = useCalendarStore((s) => s.getDay);
   const markDay = useCalendarStore((s) => s.markDay);
   const removeLog = useCalendarStore((s) => s.removeLog);
+  const day = useCalendarDay(today);
   const currentPack = usePackStore((s) => s.currentPack)();
   const packsStatus = usePackStore((s) => s.status);
   const firstName = useProfileStore((s) => s.firstName)();
@@ -86,7 +87,6 @@ export function TodayCard() {
   }
 
   const tz = timezone ?? "UTC";
-  const day = getDay(today);
   const cycleLength = currentPack ? currentPack.activeDays + currentPack.placeboDays : null;
   const logged = day?.state === "taken" || day?.state === "skipped";
   const done = day?.state === "taken";

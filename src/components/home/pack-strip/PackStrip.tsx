@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton/Skeleton";
 import { addDays } from "@/lib/shared/dates";
 import { useCalendarStore } from "@/store/useCalendarStore";
 import { usePackStore } from "@/store/usePackStore";
+import { useCalendarDay } from "@/hooks/useCalendarDay";
 import type { CalendarDay } from "@/types/api";
 import styles from "./PackStrip.module.css";
 
@@ -24,11 +25,11 @@ function formatStarted(startDay: string): string {
 
 export function PackStrip() {
   const today = useCalendarStore((s) => s.today);
-  const getDay = useCalendarStore((s) => s.getDay);
+  const months = useCalendarStore((s) => s.months);
   const ensureRange = useCalendarStore((s) => s.ensureRange);
   const currentPack = usePackStore((s) => s.currentPack)();
 
-  const todayDay = today ? getDay(today) : null;
+  const todayDay = useCalendarDay(today);
   const cycleLength = currentPack ? currentPack.activeDays + currentPack.placeboDays : 0;
   const cycleStart =
     today && todayDay?.dayInPack ? addDays(today, -(todayDay.dayInPack - 1)) : null;
@@ -56,7 +57,8 @@ export function PackStrip() {
 
   const days: CalendarDay[] = [];
   for (let i = 0; i < cycleLength; i += 1) {
-    const found = getDay(addDays(cycleStart, i));
+    const key = addDays(cycleStart, i);
+    const found = months[key.slice(0, 7)]?.days.find((d) => d.day === key);
     if (found) {
       days.push(found);
     }
