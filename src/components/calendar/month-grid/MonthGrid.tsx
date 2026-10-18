@@ -10,6 +10,7 @@ import styles from "./MonthGrid.module.css";
 interface MonthGridProps {
   days: CalendarDay[];
   weekStartsOn: 0 | 1;
+  today: DayString | null;
   justChanged: Record<string, { kind: "marked" | "undone"; at: number } | undefined>;
   nudge: Record<string, number | undefined>;
   focusedDay: DayString | null;
@@ -22,8 +23,12 @@ function cellLabel(day: CalendarDay): string {
   switch (day.state) {
     case "taken":
       return `${date}, taken`;
+    case "placeboTaken":
+      return `${date}, placebo day, taken`;
     case "skipped":
       return `${date}, skipped`;
+    case "placeboSkipped":
+      return `${date}, placebo day, skipped`;
     case "missed":
       return `${date}, missed, tap to catch up`;
     case "today":
@@ -40,6 +45,7 @@ function cellLabel(day: CalendarDay): string {
 export function MonthGrid({
   days,
   weekStartsOn,
+  today,
   justChanged,
   nudge,
   focusedDay,
@@ -69,6 +75,7 @@ export function MonthGrid({
             <DayCell
               key={cell.day}
               day={cell}
+              isToday={cell.day === today}
               just={justChanged[cell.day]?.kind}
               nudged={nudge[cell.day] !== undefined}
               tabIndex={focusedDay === null ? undefined : focusedDay === cell.day ? 0 : -1}
@@ -84,6 +91,7 @@ export function MonthGrid({
 
 function DayCell({
   day,
+  isToday,
   just,
   nudged,
   tabIndex,
@@ -91,6 +99,7 @@ function DayCell({
   onActivate,
 }: {
   day: CalendarDay;
+  isToday: boolean;
   just: "marked" | "undone" | undefined;
   nudged: boolean;
   tabIndex: number | undefined;
@@ -105,6 +114,7 @@ function DayCell({
       aria-label={cellLabel(day)}
       aria-disabled={disabled || undefined}
       data-state={day.state}
+      data-today={isToday && !disabled ? "true" : undefined}
       data-just={just}
       data-day={day.day}
       data-nudge={nudged ? "true" : undefined}
@@ -122,16 +132,19 @@ function DayCell({
         </span>
       ) : null}
       <span aria-hidden="true" className={styles.glyph}>
-        {day.state === "taken" ? (
+        {day.state === "taken" || day.state === "placeboTaken" ? (
           <svg viewBox="0 0 24 24" className={styles.checkSvg}>
             <path d="M6 12.5l4 4L18 7.5" pathLength={1} className={styles.check} />
           </svg>
         ) : null}
-        {day.state === "skipped" ? <span className={styles.dash} /> : null}
+        {day.state === "skipped" || day.state === "placeboSkipped" ? (
+          <span className={styles.dash} />
+        ) : null}
         {day.state === "placebo" ? <Moon size={14} /> : null}
-        {day.state === "taken" || day.state === "skipped" || day.state === "placebo" ? null : (
+        {day.state === "missed" ? <MissedX /> : null}
+        {day.state === "today" || day.state === "upcoming" ? (
           <GlyphFallback state={day.state} />
-        )}
+        ) : null}
         <span aria-hidden="true" className={styles.ripple} />
         <span aria-hidden="true" className={styles.ripple2} />
       </span>
@@ -139,10 +152,15 @@ function DayCell({
   );
 }
 
+function MissedX() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={styles.missedX}>
+      <path d="M7 7l10 10M17 7L7 17" />
+    </svg>
+  );
+}
+
 function GlyphFallback({ state }: { state: string }) {
-  if (state === "missed") {
-    return <span className={styles.missedRing} />;
-  }
   if (state === "today") {
     return <span className={styles.todayRing} />;
   }

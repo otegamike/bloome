@@ -346,9 +346,6 @@ function assertLoggable(state: MockState, day: DayString): void {
   const kind = anchor
     ? getDayKind(anchor.startDay, anchor.activeDays, anchor.placeboDays, day)
     : "outside";
-  if (kind === "placebo") {
-    throw new MockApiError(422, "Placebo days are rest days and cannot be logged");
-  }
   if (kind === "outside") {
     throw new MockApiError(422, "Days before your first pack cannot be logged");
   }

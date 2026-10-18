@@ -30,6 +30,7 @@
 .sw[data-state="missed"] {
   background: var(--color-missed-soft);
   border: 1.5px dashed var(--color-missed);
+  color: var(--color-missed);
 }
 
 .sw[data-state="placebo"] {

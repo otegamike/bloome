@@ -344,6 +344,7 @@ export function CalendarBoard() {
               <MonthPane
                 entry={months[pane]}
                 weekStartsOn={weekStartsOn}
+                today={serverToday}
                 justChanged={justChanged}
                 nudge={nudge}
                 focusedDay={focusedDay}
@@ -363,6 +364,7 @@ export function CalendarBoard() {
 interface MonthPaneProps {
   entry: MonthEntry | undefined;
   weekStartsOn: 0 | 1;
+  today: DayString | null;
   justChanged: Record<string, { kind: "marked" | "undone"; at: number } | undefined>;
   nudge: Record<string, number | undefined>;
   focusedDay: DayString | null;
@@ -374,6 +376,7 @@ interface MonthPaneProps {
 function MonthPane({
   entry,
   weekStartsOn,
+  today,
   justChanged,
   nudge,
   focusedDay,
@@ -405,6 +408,7 @@ function MonthPane({
     <MonthGrid
       days={entry?.days ?? []}
       weekStartsOn={weekStartsOn}
+      today={today}
       justChanged={justChanged}
       nudge={nudge}
       focusedDay={focusedDay}

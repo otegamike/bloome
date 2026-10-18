@@ -12,7 +12,7 @@ import { Dialog } from "@/components/ui/dialog/Dialog";
 import { Skeleton } from "@/components/ui/skeleton/Skeleton";
 import { PresetPicker } from "@/components/packs/preset-picker/PresetPicker";
 import { StartDatePicker } from "@/components/packs/start-date-picker/StartDatePicker";
-import { addDays, todayInTz } from "@/lib/shared/dates";
+import { addDays, isValidDay, todayInTz } from "@/lib/shared/dates";
 import { DEFAULT_PRESETS } from "@/lib/shared/config";
 import { useAlertStore } from "@/store/useAlertStore";
 import { usePackStore } from "@/store/usePackStore";
@@ -28,12 +28,18 @@ function browserToday(): DayString {
   }
 }
 
-export function Packs() {
+export function Packs({
+  startNew = false,
+  initialStartDay,
+}: {
+  startNew?: boolean;
+  initialStartDay?: string;
+}) {
   const packs = usePackStore((s) => s.packs);
   const status = usePackStore((s) => s.status);
   const fetchPacks = usePackStore((s) => s.fetchPacks);
   const deletePack = usePackStore((s) => s.deletePack);
-  const [formOpen, setFormOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(startNew);
   const [editing, setEditing] = useState<PackDTO | null>(null);
   const [deleting, setDeleting] = useState<PackDTO | null>(null);
   const [busyDelete, setBusyDelete] = useState(false);
@@ -98,6 +104,7 @@ export function Packs() {
         <PackForm
           key={editing?.id ?? "new"}
           editing={editing}
+          initialStartDay={initialStartDay}
           onDone={() => setFormOpen(false)}
         />
       </Dialog>
@@ -114,7 +121,15 @@ export function Packs() {
   );
 }
 
-function PackForm({ editing, onDone }: { editing: PackDTO | null; onDone: () => void }) {
+function PackForm({
+  editing,
+  initialStartDay,
+  onDone,
+}: {
+  editing: PackDTO | null;
+  initialStartDay?: string;
+  onDone: () => void;
+}) {
   const createPack = usePackStore((s) => s.createPack);
   const updatePack = usePackStore((s) => s.updatePack);
   const initialPreset: PackPreset =
@@ -122,8 +137,11 @@ function PackForm({ editing, onDone }: { editing: PackDTO | null; onDone: () => 
     (editing
       ? { id: "custom", name: editing.name, activeDays: editing.activeDays, placeboDays: editing.placeboDays }
       : DEFAULT_PRESETS[0] ?? { id: "levofem", name: "Levofem", activeDays: 21, placeboDays: 7 });
+  const prefillStart = initialStartDay && isValidDay(initialStartDay) ? initialStartDay : null;
   const [preset, setPreset] = useState<PackPreset>(initialPreset);
-  const [startDay, setStartDay] = useState<DayString>(editing?.startDay ?? browserToday());
+  const [startDay, setStartDay] = useState<DayString>(
+    editing?.startDay ?? prefillStart ?? browserToday(),
+  );
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const maxDay = addDays(browserToday(), 30);

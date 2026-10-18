@@ -15,6 +15,8 @@ export type DayState =
   | "upcoming"
   | "today"
   | "placebo"
+  | "placeboTaken"
+  | "placeboSkipped"
   | "skipped"
   | "outside";
 

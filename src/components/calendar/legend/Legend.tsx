@@ -1,4 +1,5 @@
 import { Check } from "@/components/icons/Check";
+import { Close } from "@/components/icons/Close";
 import styles from "./Legend.module.css";
 
 export function Legend() {
@@ -11,7 +12,9 @@ export function Legend() {
         Taken
       </li>
       <li className={styles.item}>
-        <span data-state="missed" className={styles.sw} />
+        <span data-state="missed" className={styles.sw}>
+          <Close size={8} />
+        </span>
         Missed
       </li>
       <li className={styles.item}>

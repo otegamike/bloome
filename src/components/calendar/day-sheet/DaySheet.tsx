@@ -50,7 +50,9 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
   const tz = timezone ?? "UTC";
   const logged = calendarDay?.log != null;
   const loggable =
-    calendarDay?.kind === "active" && !!today && calendarDay.day <= today;
+    (calendarDay?.kind === "active" || calendarDay?.kind === "placebo") &&
+    !!today &&
+    calendarDay.day <= today;
   const status: LogStatus = calendarDay?.log?.status ?? "taken";
 
   const close = () => {
@@ -154,7 +156,7 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
       ) : null}
 
       {calendarDay?.state === "placebo" ? (
-        <p className={styles.info}>Placebo day 🌙 · Nothing to log today.</p>
+        <p className={styles.info}>Placebo day 🌙</p>
       ) : null}
       {calendarDay?.state === "upcoming" ? (
         <p className={styles.info}>That day hasn&apos;t arrived yet</p>
@@ -166,12 +168,14 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
 function chipTone(state: string): "taken" | "missed" | "placebo" | "skipped" | "secondary" | "default" {
   switch (state) {
     case "taken":
+    case "placeboTaken":
       return "taken";
     case "missed":
       return "missed";
     case "placebo":
       return "placebo";
     case "skipped":
+    case "placeboSkipped":
       return "skipped";
     default:
       return "default";
@@ -182,12 +186,16 @@ function chipLabel(state: string): string {
   switch (state) {
     case "taken":
       return "Taken";
+    case "placeboTaken":
+      return "Placebo · taken";
     case "missed":
       return "Missed";
     case "placebo":
       return "Placebo";
     case "skipped":
       return "Skipped";
+    case "placeboSkipped":
+      return "Placebo · skipped";
     case "today":
       return "Today";
     case "upcoming":

@@ -109,6 +109,16 @@
   border: 1px solid var(--color-placebo);
 }
 
+.dot[data-state="placeboTaken"] {
+  background: var(--color-placebo-taken);
+  color: var(--color-taken-ink);
+}
+
+.dot[data-state="placeboSkipped"] {
+  background: var(--color-placebo-soft);
+  border: 1px solid var(--color-placebo);
+}
+
 .dot[data-state="upcoming"] {
   border: 1.5px solid var(--color-primary-light);
   background: transparent;

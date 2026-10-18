@@ -13,7 +13,7 @@ describe("shouldRemindToday", () => {
     expect(shouldRemindToday({ kind: "active", hasLog: true, onPlaceboDays: false })).toBe(false);
   });
 
-  it("follows the setting on placebo days", () => {
+  it("follows the setting on unlogged placebo days", () => {
     expect(shouldRemindToday({ kind: "placebo", hasLog: false, onPlaceboDays: true })).toBe(true);
     expect(
       shouldRemindToday({
@@ -22,6 +22,10 @@ describe("shouldRemindToday", () => {
         onPlaceboDays: false,
       })
     ).toBe(false);
+  });
+
+  it("stays quiet on a logged placebo day even when the setting is on", () => {
+    expect(shouldRemindToday({ kind: "placebo", hasLog: true, onPlaceboDays: true })).toBe(false);
   });
 
   it("never reminds outside any pack", () => {

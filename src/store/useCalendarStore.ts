@@ -5,7 +5,7 @@ import { getDayState } from "@/lib/shared/cycle";
 import { compareDays, todayInTz } from "@/lib/shared/dates";
 import { useAlertStore } from "@/store/useAlertStore";
 import type { CalendarDay } from "@/types/api";
-import type { DayString, LogStatus } from "@/types";
+import type { DayKind, DayState, DayString, LogStatus } from "@/types";
 
 type MonthStatus = "idle" | "loading" | "ready" | "error";
 
@@ -37,6 +37,13 @@ interface CalendarState {
 
 function monthOf(day: DayString): string {
   return day.slice(0, 7);
+}
+
+function loggedState(kind: DayKind, status: LogStatus): DayState {
+  if (kind === "placebo") {
+    return status === "taken" ? "placeboTaken" : "placeboSkipped";
+  }
+  return status;
 }
 
 function shiftMonth(month: string, delta: number): string {
@@ -173,7 +180,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     if (!current || !state.today) {
       return;
     }
-    if (current.kind !== "active") {
+    if (current.kind === "outside") {
       alerts.addAlert({ kind: "info", message: "That day can't be logged" });
       return;
     }
@@ -183,10 +190,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     }
     const epoch = state.epoch;
     const snapshot = current;
-    const wasLogged = current.state === "taken" || current.state === "skipped";
+    const wasLogged = current.log != null;
     const optimistic: CalendarDay = {
       ...current,
-      state: status,
+      state: loggedState(current.kind, status),
       log: {
         status,
         note: note ?? current.log?.note ?? null,
@@ -225,9 +232,10 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
         pending: { ...s.pending, [day]: false },
       }));
       const timezone = get().timezone ?? state.timezone ?? "UTC";
+      const verb = status === "taken" ? "taken" : "skipped";
       const message = optimistic.log?.loggedLate
         ? `Caught up for ${prettyDay(day, timezone)}`
-        : "Marked as taken";
+        : `Marked as ${verb}`;
       alerts.addAlert({
         kind: "success",
         message,
@@ -239,7 +247,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       alerts.announce(
         optimistic.log?.loggedLate
           ? `Caught up for ${prettyDay(day, timezone)}`
-          : `Marked ${prettyDay(day, timezone)} as taken`,
+          : `Marked ${prettyDay(day, timezone)} as ${verb}`,
       );
     } catch (error) {
       handleAuthError(error);

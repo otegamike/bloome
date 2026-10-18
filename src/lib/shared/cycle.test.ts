@@ -51,6 +51,22 @@ describe("getDayState", () => {
     ).toBe("placebo");
   });
 
+  it("reads a log on a placebo day as placeboTaken or placeboSkipped", () => {
+    const base = { kind: "placebo" as const, day: "2026-01-22", today: "2026-03-01" };
+    expect(
+      getDayState({
+        ...base,
+        log: { status: "taken", note: null, takenAt: "2026-01-22T08:00:00Z", loggedLate: false },
+      }),
+    ).toBe("placeboTaken");
+    expect(
+      getDayState({
+        ...base,
+        log: { status: "skipped", note: null, takenAt: "2026-01-22T08:00:00Z", loggedLate: false },
+      }),
+    ).toBe("placeboSkipped");
+  });
+
   it("calls a past active day without a log missed", () => {
     expect(getDayState({ kind: "active", day: "2026-02-10", today: "2026-03-01" })).toBe("missed");
   });

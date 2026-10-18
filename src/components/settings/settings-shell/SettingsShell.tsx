@@ -40,6 +40,8 @@ function SettingsShellInner() {
   const searchParams = useSearchParams();
   const raw = searchParams.get("tab");
   const active: SettingsTab = isTab(raw) ? raw : "profile";
+  const openNewPack = searchParams.get("new") === "1";
+  const startDay = searchParams.get("start") ?? undefined;
 
   const select = (tab: SettingsTab) => {
     router.replace(`/settings?tab=${tab}`);
@@ -70,7 +72,7 @@ function SettingsShellInner() {
           {active === "account" ? <Account /> : null}
           {active === "reminders" ? <Reminders /> : null}
           {active === "shortcuts" ? <Shortcuts /> : null}
-          {active === "packs" ? <Packs /> : null}
+          {active === "packs" ? <Packs startNew={openNewPack} initialStartDay={startDay} /> : null}
         </div>
       </div>
     </AppShell>

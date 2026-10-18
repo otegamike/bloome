@@ -203,11 +203,14 @@
   background: var(--color-skipped-ink);
 }
 
-.missedRing {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px dashed var(--color-missed);
+.missedX {
+  width: 72%;
+  height: 72%;
+  fill: none;
+  stroke: var(--color-missed);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .todayRing {
@@ -229,16 +232,19 @@
   border-color: var(--color-border);
 }
 
-.cell[data-state="today"] {
-  background: var(--color-surface);
+.cell[data-today="true"] {
   border: 2px solid var(--color-primary);
 }
 
-.cell[data-state="today"] .date {
+.cell[data-state="today"] {
+  background: var(--color-surface);
+}
+
+.cell[data-today="true"] .date {
   font-weight: 800;
 }
 
-.cell[data-state="today"]::after {
+.cell[data-today="true"]::after {
   content: "";
   position: absolute;
   inset: -2px;
@@ -271,7 +277,9 @@
   border-color: var(--color-missed-border);
 }
 
-.cell[data-state="placebo"] {
+.cell[data-state="placebo"],
+.cell[data-state="placeboTaken"],
+.cell[data-state="placeboSkipped"] {
   background-color: var(--color-placebo-soft);
   background-image: repeating-linear-gradient(
     135deg,
@@ -280,6 +288,19 @@
     color-mix(in srgb, var(--color-placebo) 22%, transparent) 6px,
     color-mix(in srgb, var(--color-placebo) 22%, transparent) 8px
   );
+}
+
+.cell[data-state="placeboTaken"] .glyph {
+  background: var(--color-placebo-taken);
+  color: var(--color-taken-ink);
+}
+
+.cell[data-state="placeboTaken"] .check {
+  stroke: var(--color-taken-ink);
+}
+
+.cell[data-state="placeboSkipped"] .glyph {
+  border: 2px solid var(--color-skipped-ink);
 }
 
 .cell[data-state="outside"] {

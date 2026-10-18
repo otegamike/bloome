@@ -7,7 +7,8 @@ import type { DayKind } from "@/types";
 // |---------------------------------|--------------------|---------------------|
 // | Active day, not logged          | remind             | remind              |
 // | Active day, logged              | no reminder        | no reminder         |
-// | Placebo day                     | remind             | no reminder         |
+// | Placebo day, not logged         | remind             | no reminder         |
+// | Placebo day, logged             | no reminder        | no reminder         |
 // | Outside any pack                | no reminder        | no reminder         |
 
 export interface ShouldRemindTodayArgs {
@@ -20,7 +21,7 @@ export interface ShouldRemindTodayArgs {
 
 export function shouldRemindToday({ kind, hasLog, onPlaceboDays }: ShouldRemindTodayArgs): boolean {
   if (kind === "outside") return false;
-  if (kind === "placebo") return onPlaceboDays;
+  if (kind === "placebo") return onPlaceboDays && !hasLog;
   return !hasLog;
 }
 

@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import { BloomMark } from "@/components/brand/bloom-mark/BloomMark";
 import { Check } from "@/components/icons/Check";
 import { Moon } from "@/components/icons/Moon";
+import { Plus } from "@/components/icons/Plus";
 import { Button } from "@/components/ui/button/Button";
 import { Chip } from "@/components/ui/chip/Chip";
 import { Skeleton } from "@/components/ui/skeleton/Skeleton";
+import { addDays } from "@/lib/shared/dates";
 import { useCalendarStore } from "@/store/useCalendarStore";
 import { usePackStore } from "@/store/usePackStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -88,8 +90,14 @@ export function TodayCard() {
 
   const tz = timezone ?? "UTC";
   const cycleLength = currentPack ? currentPack.activeDays + currentPack.placeboDays : null;
-  const logged = day?.state === "taken" || day?.state === "skipped";
-  const done = day?.state === "taken";
+  const logged = day?.log != null;
+  const done = day?.state === "taken" || day?.state === "placeboTaken";
+  const daysLeft =
+    cycleLength != null && day?.dayInPack != null ? cycleLength - day.dayInPack : null;
+  const nextPackStart =
+    day?.kind === "placebo" && daysLeft != null && daysLeft <= 1
+      ? addDays(today, daysLeft + 1)
+      : null;
 
   return (
     <section
@@ -137,10 +145,28 @@ export function TodayCard() {
         <div className={styles.placebo}>
           <p className={styles.placeboTitle}>
             <Moon size={20} />
-            Placebo day 🌙
+            Placebo day
           </p>
-          <p className={styles.placeboSub}>Nothing to log today.</p>
+          <p className={styles.placeboSub}>Rest day. mark it if you took one.</p>
+          <div className={styles.placeboActions}>
+            <Button onClick={() => void markDay(today, "taken")}>Mark as taken</Button>
+            <Button variant="secondary" onClick={() => void markDay(today, "skipped")}>
+              Mark as skipped
+            </Button>
+          </div>
         </div>
+      ) : null}
+
+      {nextPackStart ? (
+        <Button
+          size="lg"
+          iconLeft={<Plus size={20} />}
+          onClick={() => router.push(`/settings?tab=packs&new=1&start=${nextPackStart}`)}
+          data-breathe="true"
+          className={styles.cta}
+        >
+          Start a new pack
+        </Button>
       ) : null}
 
       {(day === null || day?.state === "outside") && (

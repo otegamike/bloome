@@ -49,6 +49,12 @@ function liveDots(days: CalendarDay[]): Dot[] {
       case "placebo":
         label = `Day ${position}, placebo`;
         break;
+      case "placeboTaken":
+        label = `Day ${position}, placebo, taken`;
+        break;
+      case "placeboSkipped":
+        label = `Day ${position}, placebo, skipped`;
+        break;
       case "today":
         label = `Day ${position}, today`;
         break;
@@ -110,7 +116,7 @@ function StripSlot({ dot, hasNext, turnsDown }: StripSlotProps) {
   return (
     <div role="listitem" aria-label={dot.label} className={styles.slot}>
       <span data-state={dot.dotState} aria-hidden="true" className={styles.dot}>
-        {dot.dotState === "taken" ? <Check size={10} /> : null}
+        {dot.dotState === "taken" || dot.dotState === "placeboTaken" ? <Check size={10} /> : null}
       </span>
       {hasNext ? (
         <span aria-hidden="true" className={styles.arrowNext}>

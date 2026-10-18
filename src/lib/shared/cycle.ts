@@ -50,7 +50,10 @@ export interface DayStateArgs {
 
 export function getDayState({ kind, day, today, log }: DayStateArgs): DayState {
   if (kind === "outside") return "outside";
-  if (kind === "placebo") return "placebo";
+  if (kind === "placebo") {
+    if (!log) return "placebo";
+    return log.status === "taken" ? "placeboTaken" : "placeboSkipped";
+  }
   if (log) return log.status;
   const cmp = compareDays(day, today);
   if (cmp > 0) return "upcoming";

@@ -100,6 +100,7 @@
   --color-taken: #c24e78;
   --color-taken-soft: #fbe3eb;
   --color-taken-ink: #8e2e54;
+  --color-placebo-taken: #e7aec6;
   --color-missed: #e07a70;
   --color-missed-soft: #ffe4e0;
   --color-missed-border: #f2aba3;
@@ -145,6 +146,7 @@
   --color-taken: #a63a63;
   --color-taken-soft: #f7dce5;
   --color-taken-ink: #7b2447;
+  --color-placebo-taken: #dfa9bf;
   --color-missed: #dd7468;
   --color-missed-soft: #ffe3de;
   --color-missed-border: #efa79e;
@@ -190,6 +192,7 @@
   --color-taken: #4f8a67;
   --color-taken-soft: #e3f1e8;
   --color-taken-ink: #2f6347;
+  --color-placebo-taken: #aed9be;
   --color-missed: #e4786b;
   --color-missed-soft: #ffe3de;
   --color-missed-border: #f4a99f;

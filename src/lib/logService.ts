@@ -50,7 +50,7 @@ async function userTimezone(userId: Types.ObjectId): Promise<string> {
 }
 
 /**
- * Log (or re-log) one day. Only active days, only today or the past.
+ * Log (or re-log) one day. Only days inside a pack, only today or the past.
  * Catch-up logging sets loggedLate.
  */
 export async function upsertLog(
@@ -73,9 +73,6 @@ export async function upsertLog(
   const kind = anchor
     ? getDayKind(anchor.startDay, anchor.activeDays, anchor.placeboDays, day)
     : "outside";
-  if (kind === "placebo") {
-    throw unprocessable("Placebo days are rest days and cannot be logged");
-  }
   if (kind === "outside") {
     throw unprocessable("Days before your first pack cannot be logged");
   }
