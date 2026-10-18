@@ -113,3 +113,24 @@ export function monthDays(month: string): DayString[] {
   }
   return days;
 }
+
+/** Every month string from `from` through `to` (inclusive), oldest first. */
+export function monthsInRange(from: string, to: string): string[] {
+  const a = MONTH_RE.exec(from);
+  const b = MONTH_RE.exec(to);
+  if (!a || !b) throw new Error(`Invalid month range (expected YYYY-MM): ${from}..${to}`);
+  let year = Number(a[1]);
+  let month = Number(a[2]);
+  const endYear = Number(b[1]);
+  const endMonth = Number(b[2]);
+  const months: string[] = [];
+  while (year < endYear || (year === endYear && month <= endMonth)) {
+    months.push(`${year}-${pad(month)}`);
+    month += 1;
+    if (month > 12) {
+      month = 1;
+      year += 1;
+    }
+  }
+  return months;
+}

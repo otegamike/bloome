@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { monthsInRange } from "@/lib/shared/dates";
 import type { CalendarBatchResponse } from "@/types/api";
 
-const { getCalendarsMock } = vi.hoisted(() => ({ getCalendarsMock: vi.fn() }));
+const { getCalendarRangeMock } = vi.hoisted(() => ({ getCalendarRangeMock: vi.fn() }));
 
 vi.mock("@/client/apiClient", () => ({
   deleteLog: vi.fn(),
   deletePeriod: vi.fn(),
-  getCalendars: getCalendarsMock,
+  getCalendarRange: getCalendarRangeMock,
   handleAuthError: vi.fn(),
   putLog: vi.fn(),
   startPeriod: vi.fn(),
@@ -16,9 +17,14 @@ vi.mock("@/client/apiClient", () => ({
 import { seedMonths } from "@/client/calendarGrid";
 import { useCalendarStore } from "@/store/useCalendarStore";
 
-function batchResponse(months: string[]): CalendarBatchResponse {
+function batchResponse(from: string, to: string): CalendarBatchResponse {
   return {
-    months: months.map((month) => ({ month, today: "2026-10-05", timezone: "UTC", days: [] })),
+    months: monthsInRange(from, to).map((month) => ({
+      month,
+      today: "2026-10-05",
+      timezone: "UTC",
+      days: [],
+    })),
   };
 }
 
@@ -35,20 +41,23 @@ beforeEach(() => {
 });
 
 describe("calendar batching", () => {
-  it("loads a five-month window in a single request", async () => {
-    getCalendarsMock.mockImplementation(async (months: string[]) => batchResponse(months));
+  it("loads a five-month window in a single range request", async () => {
+    getCalendarRangeMock.mockImplementation(async (from: string, to: string) =>
+      batchResponse(from, to),
+    );
     await useCalendarStore.getState().fetchMonths(seedMonths("2026-10"));
-    expect(getCalendarsMock).toHaveBeenCalledTimes(1);
-    const requested = (getCalendarsMock.mock.calls[0]?.[0] as string[]).sort();
-    expect(requested).toEqual(["2026-08", "2026-09", "2026-10", "2026-11", "2026-12"]);
+    expect(getCalendarRangeMock).toHaveBeenCalledTimes(1);
+    expect(getCalendarRangeMock).toHaveBeenCalledWith("2026-08", "2026-12");
     expect(useCalendarStore.getState().months["2026-10"]?.status).toBe("ready");
   });
 
   it("never refetches a ready month", async () => {
-    getCalendarsMock.mockImplementation(async (months: string[]) => batchResponse(months));
+    getCalendarRangeMock.mockImplementation(async (from: string, to: string) =>
+      batchResponse(from, to),
+    );
     await useCalendarStore.getState().fetchMonths(["2026-10"]);
-    const calls = getCalendarsMock.mock.calls.length;
+    const calls = getCalendarRangeMock.mock.calls.length;
     await useCalendarStore.getState().fetchMonths(["2026-10"]);
-    expect(getCalendarsMock.mock.calls.length).toBe(calls);
+    expect(getCalendarRangeMock.mock.calls.length).toBe(calls);
   });
 });

@@ -1,5 +1,6 @@
 import type { CalendarDay } from "@/types/api";
 import type { DayString } from "@/types";
+import { monthsInRange } from "@/lib/shared/dates";
 
 /** Pad the month's days with null spacers so the 1st lands in the right column. */
 export function buildGridCells(
@@ -61,13 +62,7 @@ export function shiftMonth(month: string, delta: number): string {
 
 /** Every month from lo through hi, oldest first. Assumes lo <= hi. */
 export function rangeMonths(lo: string, hi: string): string[] {
-  const months: string[] = [];
-  let current = lo;
-  while (current <= hi) {
-    months.push(current);
-    current = shiftMonth(current, 1);
-  }
-  return months;
+  return monthsInRange(lo, hi);
 }
 
 /** The `radius` months either side of `month` (default 2 → 5 months), oldest first. */

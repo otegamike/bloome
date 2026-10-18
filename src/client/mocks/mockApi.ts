@@ -6,6 +6,7 @@ import {
   isValidMonth,
   isValidTimezone,
   monthDays,
+  monthsInRange,
   todayInTz,
 } from "@/lib/shared/dates";
 import { loadMockState, saveMockState, type MockState } from "@/client/mocks/mockDb";
@@ -324,15 +325,18 @@ export async function mockDeletePack(id: string): Promise<void> {
   });
 }
 
-export async function mockGetCalendars(months: string[]): Promise<CalendarBatchResponse> {
+export async function mockGetCalendarRange(
+  from: string,
+  to: string,
+): Promise<CalendarBatchResponse> {
   await delay();
   return withState((state) => {
+    if (!isValidMonth(from) || !isValidMonth(to) || from > to) {
+      throw new MockApiError(400, "Provide a valid month range");
+    }
     const today = todayInTz(state.me.timezone);
     const periodDays = periodDaySet(state);
-    const responses = months.map((month) => {
-      if (!isValidMonth(month)) {
-        throw new MockApiError(400, "Month must be YYYY-MM");
-      }
+    const responses = monthsInRange(from, to).map((month) => {
       const days = monthDays(month);
       return {
         month,

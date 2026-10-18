@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-import { deleteLog, deletePeriod, getCalendars, handleAuthError, putLog, startPeriod } from "@/client/apiClient";
+import { deleteLog, deletePeriod, getCalendarRange, handleAuthError, putLog, startPeriod } from "@/client/apiClient";
 import { currentMonthInTz, seedMonths, shiftMonth } from "@/client/calendarGrid";
 import { getDayState } from "@/lib/shared/cycle";
 import { compareDays, todayInTz } from "@/lib/shared/dates";
@@ -151,7 +151,8 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
       return { months: next };
     });
     try {
-      const response = await getCalendars(targets);
+      const sorted = [...targets].sort();
+      const response = await getCalendarRange(sorted[0]!, sorted[sorted.length - 1]!);
       const byMonth = new Map(response.months.map((r) => [r.month, r]));
       const latest = response.months[response.months.length - 1];
       set((state) => {

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { monthsInRange } from "@/lib/shared/dates";
+
 export const monthParamSchema = z
   .string()
   .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Must be YYYY-MM")
@@ -14,16 +16,27 @@ export const monthParamSchema = z
 /** Upper bound on a batched calendar request, so one call stays cheap. */
 export const CALENDAR_MONTHS_LIMIT = 12;
 
-export const monthsParamSchema = z
-  .string()
-  .transform((raw) =>
-    raw
-      .split(",")
-      .map((part) => part.trim())
-      .filter(Boolean),
+/**
+ * Calendar query: either a single `month`, or a `from`/`to` month range
+ * (inclusive). The range is capped at CALENDAR_MONTHS_LIMIT months.
+ */
+export const calendarQuerySchema = z
+  .object({
+    month: monthParamSchema.optional(),
+    from: monthParamSchema.optional(),
+    to: monthParamSchema.optional(),
+  })
+  .refine(
+    (v) => (v.month ? !v.from && !v.to : !!v.from && !!v.to),
+    "Provide month, or both from and to",
   )
-  .pipe(z.array(monthParamSchema).min(1, "At least one month is required").max(CALENDAR_MONTHS_LIMIT))
-  .transform((months) => Array.from(new Set(months)));
+  .refine((v) => !v.from || !v.to || v.from <= v.to, "from must not be after to")
+  .refine(
+    (v) => !v.from || !v.to || monthsInRange(v.from, v.to).length <= CALENDAR_MONTHS_LIMIT,
+    `Range must be ${CALENDAR_MONTHS_LIMIT} months or fewer`,
+  );
+
+export type CalendarQuery = z.infer<typeof calendarQuerySchema>;
 
 export const rangeQuerySchema = z
   .object({
