@@ -1,4 +1,4 @@
-import { buildDays, getDayKind, resolveAnchor } from "@/lib/shared/cycle";
+import { buildDays, getDayKind, placeboIndex, periodDaysFor, resolveAnchor } from "@/lib/shared/cycle";
 import {
   addDays,
   compareDays,
@@ -57,6 +57,10 @@ function packLikes(state: MockState) {
   }));
 }
 
+function periodDaySet(state: MockState): Set<DayString> {
+  return new Set(Object.keys(state.periodDays));
+}
+
 function buildCalendarDay(state: MockState, day: DayString): CalendarDay {
   const today = todayInTz(state.me.timezone);
   const built = buildDays({
@@ -64,6 +68,7 @@ function buildCalendarDay(state: MockState, day: DayString): CalendarDay {
     logs: state.logs,
     days: [day],
     today,
+    periodDays: periodDaySet(state),
   });
   const first = built[0];
   if (!first) {
@@ -185,10 +190,12 @@ export async function mockDeleteMe(confirm: string): Promise<void> {
       ...state,
       packs: [],
       logs: {},
+      periodDays: {},
       pushEndpoints: [],
     };
     state.packs = fresh.packs;
     state.logs = fresh.logs;
+    state.periodDays = fresh.periodDays;
     state.pushEndpoints = fresh.pushEndpoints;
   });
 }
@@ -329,7 +336,13 @@ export async function mockGetCalendar(month: string): Promise<CalendarResponse> 
       month,
       today,
       timezone: state.me.timezone,
-      days: buildDays({ packs: packLikes(state), logs: state.logs, days, today }),
+      days: buildDays({
+        packs: packLikes(state),
+        logs: state.logs,
+        days,
+        today,
+        periodDays: periodDaySet(state),
+      }),
     };
   });
 }
@@ -383,6 +396,33 @@ export async function mockDeleteLog(day: string): Promise<void> {
   await delay();
   withState((state) => {
     delete state.logs[day];
+  });
+}
+
+export async function mockStartPeriod(day: string): Promise<{ days: CalendarDay[] }> {
+  await delay();
+  return withState((state) => {
+    if (!isValidDay(day)) {
+      throw new MockApiError(400, "Day must be YYYY-MM-DD");
+    }
+    const anchor = resolveAnchor(packLikes(state), day);
+    if (!anchor) {
+      throw new MockApiError(422, "That day is not in a pack");
+    }
+    const index = placeboIndex(anchor.startDay, anchor.activeDays, anchor.placeboDays, day);
+    if (index !== 3 && index !== 4) {
+      throw new MockApiError(422, "A period can only start on the third or fourth placebo day");
+    }
+    const range = periodDaysFor(anchor.startDay, anchor.activeDays, anchor.placeboDays, day);
+    for (const periodDay of range) state.periodDays[periodDay] = true;
+    return { days: range.map((periodDay) => buildCalendarDay(state, periodDay)) };
+  });
+}
+
+export async function mockDeletePeriod(day: string): Promise<void> {
+  await delay();
+  withState((state) => {
+    delete state.periodDays[day];
   });
 }
 

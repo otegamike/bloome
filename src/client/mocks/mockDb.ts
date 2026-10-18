@@ -17,6 +17,7 @@ export interface MockState {
   me: MeResponse;
   packs: PackDTO[];
   logs: Record<string, CalendarDayLog | undefined>;
+  periodDays: Record<string, true | undefined>;
   pushEndpoints: string[];
   pushTestAt: number | null;
   packSeq: number;
@@ -81,6 +82,7 @@ function seed(): MockState {
     },
     packs: [pack],
     logs,
+    periodDays: {},
     pushEndpoints: [],
     pushTestAt: null,
     packSeq: 2,
@@ -106,6 +108,8 @@ export function loadMockState(): MockState {
         };
         parsed.shortcutTokens = Array.isArray(parsed.shortcutTokens) ? parsed.shortcutTokens : [];
         parsed.tokenSeq = typeof parsed.tokenSeq === "number" ? parsed.tokenSeq : 1;
+        parsed.periodDays =
+          parsed.periodDays && typeof parsed.periodDays === "object" ? parsed.periodDays : {};
         return parsed;
       }
     }

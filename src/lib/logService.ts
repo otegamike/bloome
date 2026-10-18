@@ -6,6 +6,7 @@ import { badRequest, notFound, unprocessable } from "@/lib/apiErrors";
 import { connectDB } from "@/lib/db";
 import PillLogModel, { type PillLogDoc } from "@/models/PillLog";
 import PillPackModel from "@/models/PillPack";
+import PeriodDayModel from "@/models/PeriodDay";
 import UserModel from "@/models/User";
 import { compareDays, diffInDays, isValidDay, todayInTz } from "@/lib/shared/dates";
 import { buildDays, getDayKind, resolveAnchor } from "@/lib/shared/cycle";
@@ -16,6 +17,7 @@ import type { CalendarDay, LogDTO, LogLike } from "@/types/api";
 
 void PillLogModel;
 void PillPackModel;
+void PeriodDayModel;
 void UserModel;
 
 function toLogDTO(doc: PillLogDoc): LogDTO {
@@ -84,11 +86,14 @@ export async function upsertLog(
     { upsert: true, new: true },
   );
   if (!doc) throw badRequest("Could not save this day");
+  const periodDays = new Set<DayString>();
+  if (await PeriodDayModel.exists({ userId: id, day })) periodDays.add(day);
   const built = buildDays({
     packs: likes,
     logs: { [day]: toLogLike(doc) },
     days: [day],
     today,
+    periodDays,
   });
   const first = built[0];
   if (!first) throw badRequest("Could not save this day");

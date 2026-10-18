@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PackLike } from "@/types/api";
 
-import { buildDays, getDayKind, getDayState, resolveAnchor } from "@/lib/shared/cycle";
+import { buildDays, getDayKind, getDayState, periodDaysFor, placeboIndex, resolveAnchor } from "@/lib/shared/cycle";
 
 const PACK_21_7: PackLike = {
   id: "pack-a",
@@ -102,6 +102,7 @@ describe("buildDays", () => {
       logs: {},
       days: ["2026-01-29"],
       today: "2026-03-01",
+      periodDays: new Set(),
     });
     expect(days[0]?.kind).toBe("active");
     expect(days[0]?.dayInPack).toBe(1);
@@ -115,6 +116,7 @@ describe("buildDays", () => {
       logs: {},
       days: ["2026-02-10", "2026-03-05"],
       today: "2026-04-01",
+      periodDays: new Set(),
     });
     expect(days[0]?.packId).toBe("pack-a");
     expect(days[0]?.state).toBe("missed");
@@ -129,6 +131,7 @@ describe("buildDays", () => {
       logs: {},
       days: ["2026-03-10"],
       today: "2026-05-01",
+      periodDays: new Set(),
     });
     expect(days[0]?.kind).toBe("active");
     expect(days[0]?.state).toBe("missed");
@@ -141,9 +144,76 @@ describe("buildDays", () => {
       logs: {},
       days: ["2025-12-31"],
       today: "2026-03-01",
+      periodDays: new Set(),
     });
     expect(days[0]?.state).toBe("outside");
     expect(days[0]?.packId).toBeNull();
     expect(days[0]?.log).toBeNull();
+  });
+
+  it("carries the period overlay without changing the day state", () => {
+    const days = buildDays({
+      packs: [PACK_21_7],
+      logs: {},
+      days: ["2026-01-24"],
+      today: "2026-03-01",
+      periodDays: new Set(["2026-01-24"]),
+    });
+    expect(days[0]?.state).toBe("placebo");
+    expect(days[0]?.isPeriod).toBe(true);
+  });
+
+  it("defaults isPeriod to false for unlisted days", () => {
+    const days = buildDays({
+      packs: [PACK_21_7],
+      logs: {},
+      days: ["2026-01-24"],
+      today: "2026-03-01",
+      periodDays: new Set(),
+    });
+    expect(days[0]?.isPeriod).toBe(false);
+  });
+});
+
+describe("placeboIndex", () => {
+  it("returns a 1-based index inside the placebo block", () => {
+    expect(placeboIndex("2026-01-01", 21, 7, "2026-01-22")).toBe(1);
+    expect(placeboIndex("2026-01-01", 21, 7, "2026-01-24")).toBe(3);
+    expect(placeboIndex("2026-01-01", 21, 7, "2026-01-25")).toBe(4);
+    expect(placeboIndex("2026-01-01", 21, 7, "2026-01-28")).toBe(7);
+  });
+
+  it("returns null for non-placebo days", () => {
+    expect(placeboIndex("2026-01-01", 21, 7, "2026-01-10")).toBeNull();
+    expect(placeboIndex("2026-01-01", 21, 7, "2025-12-31")).toBeNull();
+  });
+});
+
+describe("periodDaysFor", () => {
+  it("spans the start day plus four days when started on the third placebo day", () => {
+    expect(periodDaysFor("2026-01-01", 21, 7, "2026-01-24")).toEqual([
+      "2026-01-24",
+      "2026-01-25",
+      "2026-01-26",
+      "2026-01-27",
+      "2026-01-28",
+    ]);
+  });
+
+  it("clips to the placebo block when started on the fourth placebo day", () => {
+    expect(periodDaysFor("2026-01-01", 21, 7, "2026-01-25")).toEqual([
+      "2026-01-25",
+      "2026-01-26",
+      "2026-01-27",
+      "2026-01-28",
+    ]);
+  });
+
+  it("never runs past the end of a short placebo block", () => {
+    expect(periodDaysFor("2026-01-01", 21, 3, "2026-01-24")).toEqual(["2026-01-24"]);
+  });
+
+  it("returns an empty list for a non-placebo day", () => {
+    expect(periodDaysFor("2026-01-01", 21, 7, "2026-01-10")).toEqual([]);
   });
 });

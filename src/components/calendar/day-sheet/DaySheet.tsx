@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button/Button";
 import { Chip } from "@/components/ui/chip/Chip";
 import { Dialog } from "@/components/ui/dialog/Dialog";
 import { SegmentedTabs } from "@/components/ui/segmented-tabs/SegmentedTabs";
+import { Drop } from "@/components/icons/Drop";
 import { longDateLabel } from "@/client/calendarGrid";
 import { useAlertStore } from "@/store/useAlertStore";
 import { useCalendarStore } from "@/store/useCalendarStore";
+import { usePackStore } from "@/store/usePackStore";
 import { useCalendarDay } from "@/hooks/useCalendarDay";
 import type { DayString, LogStatus } from "@/types";
 import styles from "./DaySheet.module.css";
@@ -32,6 +34,9 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
   const today = useCalendarStore((s) => s.today);
   const markDay = useCalendarStore((s) => s.markDay);
   const removeLog = useCalendarStore((s) => s.removeLog);
+  const markPeriod = useCalendarStore((s) => s.markPeriod);
+  const removePeriod = useCalendarStore((s) => s.removePeriod);
+  const packs = usePackStore((s) => s.packs);
   const [note, setNote] = useState<string | null>(null);
   const [lastDay, setLastDay] = useState<DayString | null>(null);
   const [savingNote, setSavingNote] = useState(false);
@@ -54,6 +59,18 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
     !!today &&
     calendarDay.day <= today;
   const status: LogStatus = calendarDay?.log?.status ?? "taken";
+  const anchorPack = calendarDay?.packId
+    ? (packs.find((p) => p.id === calendarDay.packId) ?? null)
+    : null;
+  const placeboIndex =
+    anchorPack && calendarDay?.kind === "placebo" && calendarDay.dayInPack != null
+      ? calendarDay.dayInPack - anchorPack.activeDays
+      : null;
+  const canStartPeriod =
+    calendarDay?.isPeriod !== true &&
+    (placeboIndex === 3 || placeboIndex === 4) &&
+    !!today &&
+    day <= today;
 
   const close = () => {
     setNote(null);
@@ -102,9 +119,11 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
       {loggable && !logged ? (
         <div className={styles.actions}>
           <Button onClick={() => mark("taken", draft || undefined)}>Mark as taken</Button>
-          <Button variant="secondary" onClick={() => mark("skipped", draft || undefined)}>
-            Mark as skipped
-          </Button>
+          {calendarDay?.kind !== "placebo" ? (
+            <Button variant="secondary" onClick={() => mark("skipped", draft || undefined)}>
+              Mark as skipped
+            </Button>
+          ) : null}
           <textarea
             aria-label="Note (optional)"
             placeholder="Note (optional)"
@@ -117,17 +136,46 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
         </div>
       ) : null}
 
+      {canStartPeriod ? (
+        <div className={styles.period}>
+          <p className={styles.periodNote}>Your period may start today.</p>
+          <Button variant="secondary" onClick={() => void markPeriod(day).then(close)}>
+            Mark period start
+          </Button>
+        </div>
+      ) : null}
+
+      {calendarDay?.isPeriod ? (
+        <div className={styles.period}>
+          <p className={styles.periodLabel}>
+            <Drop size={16} />
+            Period day
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => void removePeriod(day)}>
+            Remove period day
+          </Button>
+        </div>
+      ) : null}
+
       {logged && calendarDay?.log ? (
         <div className={styles.actions}>
-          <SegmentedTabs
-            label="Status"
-            active={status}
-            onChange={(value) => mark(value as LogStatus)}
-            options={[
-              { value: "taken", label: "Taken" },
-              { value: "skipped", label: "Skipped" },
-            ]}
-          />
+          {calendarDay?.kind === "placebo" ? (
+            status === "taken" ? null : (
+              <Button variant="secondary" onClick={() => mark("taken")}>
+                Mark as taken
+              </Button>
+            )
+          ) : (
+            <SegmentedTabs
+              label="Status"
+              active={status}
+              onChange={(value) => mark(value as LogStatus)}
+              options={[
+                { value: "taken", label: "Taken" },
+                { value: "skipped", label: "Skipped" },
+              ]}
+            />
+          )}
           <textarea
             aria-label="Note"
             maxLength={200}

@@ -10,6 +10,7 @@ import UserModel from "@/models/User";
 import { buildDays } from "@/lib/shared/cycle";
 import { isValidMonth, monthDays, todayInTz } from "@/lib/shared/dates";
 import { toPackLike } from "@/lib/packService";
+import { getPeriodDays } from "@/lib/periodService";
 import type { CalendarResponse, LogLike } from "@/types/api";
 
 void PillLogModel;
@@ -41,10 +42,11 @@ export async function getMonth(userId: string, monthParam: string): Promise<Cale
       loggedLate: doc.loggedLate,
     };
   }
+  const periodDays = await getPeriodDays(id, first, last);
   return {
     month: monthParam,
     today,
     timezone,
-    days: buildDays({ packs: packs.map(toPackLike), logs: byDay, days, today }),
+    days: buildDays({ packs: packs.map(toPackLike), logs: byDay, days, today, periodDays }),
   };
 }

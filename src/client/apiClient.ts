@@ -6,6 +6,7 @@ import {
   mockDeleteLog,
   mockDeleteMe,
   mockDeletePack,
+  mockDeletePeriod,
   mockGetCalendar,
   mockGetMe,
   mockListPacks,
@@ -15,6 +16,7 @@ import {
   mockRegister,
   mockRevokeShortcutToken,
   mockSendTestPush,
+  mockStartPeriod,
   mockSubscribePush,
   mockUnsubscribePush,
   mockUpdatePack,
@@ -205,6 +207,23 @@ export async function deleteLog(day: string): Promise<void> {
     return mock(() => mockDeleteLog(day));
   }
   return request<void>(`/api/logs/${day}`, { method: "DELETE" });
+}
+
+export async function startPeriod(day: string): Promise<{ days: CalendarDay[] }> {
+  if (isMockMode()) {
+    return mock(() => mockStartPeriod(day));
+  }
+  return request<{ days: CalendarDay[] }>("/api/logs/period", {
+    method: "POST",
+    body: JSON.stringify({ day }),
+  });
+}
+
+export async function deletePeriod(day: string): Promise<void> {
+  if (isMockMode()) {
+    return mock(() => mockDeletePeriod(day));
+  }
+  return request<void>(`/api/logs/period/${day}`, { method: "DELETE" });
 }
 
 export async function subscribePush(input: {

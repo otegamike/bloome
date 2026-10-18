@@ -63,3 +63,26 @@
   font-size: var(--text-base);
   color: var(--color-text-muted);
 }
+
+.period {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.periodNote {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-period);
+}
+
+.periodLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-period);
+}

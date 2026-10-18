@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 
 import { BloomMark } from "@/components/brand/bloom-mark/BloomMark";
 import { Check } from "@/components/icons/Check";
+import { Drop } from "@/components/icons/Drop";
 import { Moon } from "@/components/icons/Moon";
 import { Plus } from "@/components/icons/Plus";
 import { Button } from "@/components/ui/button/Button";
@@ -73,6 +74,8 @@ export function TodayCard() {
   const timezone = useCalendarStore((s) => s.timezone);
   const markDay = useCalendarStore((s) => s.markDay);
   const removeLog = useCalendarStore((s) => s.removeLog);
+  const markPeriod = useCalendarStore((s) => s.markPeriod);
+  const removePeriod = useCalendarStore((s) => s.removePeriod);
   const day = useCalendarDay(today);
   const currentPack = usePackStore((s) => s.currentPack)();
   const packsStatus = usePackStore((s) => s.status);
@@ -98,6 +101,12 @@ export function TodayCard() {
     day?.kind === "placebo" && daysLeft != null && daysLeft <= 1
       ? addDays(today, daysLeft + 1)
       : null;
+  const placeboIndex =
+    currentPack && day?.kind === "placebo" && day.dayInPack != null
+      ? day.dayInPack - currentPack.activeDays
+      : null;
+  const canStartPeriod =
+    day?.isPeriod !== true && (placeboIndex === 3 || placeboIndex === 4);
 
   return (
     <section
@@ -147,13 +156,30 @@ export function TodayCard() {
             <Moon size={20} />
             Placebo day
           </p>
-          <p className={styles.placeboSub}>Rest day. mark it if you took one.</p>
+          <p className={styles.placeboSub}>Rest day. Mark it if you took one.</p>
+          {canStartPeriod ? (
+            <p className={styles.periodNote}>Your period may start today.</p>
+          ) : null}
           <div className={styles.placeboActions}>
             <Button onClick={() => void markDay(today, "taken")}>Mark as taken</Button>
-            <Button variant="secondary" onClick={() => void markDay(today, "skipped")}>
-              Mark as skipped
-            </Button>
+            {canStartPeriod ? (
+              <Button variant="secondary" onClick={() => void markPeriod(today)}>
+                Mark period start
+              </Button>
+            ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {day?.isPeriod ? (
+        <div className={styles.period}>
+          <p className={styles.periodTitle}>
+            <Drop size={18} />
+            Period day
+          </p>
+          <Button variant="ghost" size="sm" onClick={() => void removePeriod(today)}>
+            Remove period day
+          </Button>
         </div>
       ) : null}
 

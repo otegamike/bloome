@@ -141,6 +141,14 @@
   line-height: 0;
 }
 
+.periodMark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--color-period);
+  line-height: 0;
+}
+
 .glyph {
   position: absolute;
   inset: 0;
@@ -166,6 +174,10 @@
   }
 
   .bud {
+    transform: scale(0.8) translateY(-25%);
+  }
+
+  .periodMark {
     transform: scale(0.8) translateY(-25%);
   }
 }
@@ -301,6 +313,17 @@
 
 .cell[data-state="placeboSkipped"] .glyph {
   border: 2px solid var(--color-skipped-ink);
+}
+
+.cell[data-period="true"] {
+  background-color: var(--color-period-soft);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0,
+    transparent 6px,
+    color-mix(in srgb, var(--color-period) 22%, transparent) 6px,
+    color-mix(in srgb, var(--color-period) 22%, transparent) 8px
+  );
 }
 
 .cell[data-state="outside"] {

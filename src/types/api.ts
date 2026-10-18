@@ -3,6 +3,8 @@ import type { DayKind, DayState, DayString, LogStatus, ThemeName } from "@/types
 // Frozen API response contract. A separate UI is built against these exact
 // shapes: never rename them, and never add required fields or remove fields.
 // CalendarDay's log shape is shared with the cycle helpers below.
+// `isPeriod` is a separate overlay from `state` (a day can be both taken and
+// a period day); read it alongside `state`, it never changes `state`.
 
 export interface ApiErrorBody {
   error: string;
@@ -45,6 +47,7 @@ export interface CalendarDay {
   packName: string | null;
   dayInPack: number | null;
   isPackStart: boolean;
+  isPeriod: boolean;
   log: CalendarDayLog | null;
 }
 

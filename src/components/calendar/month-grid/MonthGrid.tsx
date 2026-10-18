@@ -1,6 +1,7 @@
 "use client";
 
 import { Bud } from "@/components/icons/Bud";
+import { Drop } from "@/components/icons/Drop";
 import { Moon } from "@/components/icons/Moon";
 import { buildGridCells, dayNumber, longDateLabel, weekdayLabels } from "@/client/calendarGrid";
 import type { CalendarDay } from "@/types/api";
@@ -20,25 +21,26 @@ interface MonthGridProps {
 
 function cellLabel(day: CalendarDay): string {
   const date = longDateLabel(day.day);
+  const period = day.isPeriod ? ", period" : "";
   switch (day.state) {
     case "taken":
-      return `${date}, taken`;
+      return `${date}, taken${period}`;
     case "placeboTaken":
-      return `${date}, placebo day, taken`;
+      return `${date}, placebo day, taken${period}`;
     case "skipped":
-      return `${date}, skipped`;
+      return `${date}, skipped${period}`;
     case "placeboSkipped":
-      return `${date}, placebo day, skipped`;
+      return `${date}, placebo day, skipped${period}`;
     case "missed":
-      return `${date}, missed, tap to catch up`;
+      return `${date}, missed, tap to catch up${period}`;
     case "today":
-      return `${date}, today, not logged yet`;
+      return `${date}, today, not logged yet${period}`;
     case "placebo":
-      return `${date}, placebo day`;
+      return `${date}, placebo day${period}`;
     case "upcoming":
-      return `${date}, upcoming`;
+      return `${date}, upcoming${period}`;
     default:
-      return `${date}, ${day.state}`;
+      return `${date}, ${day.state}${period}`;
   }
 }
 
@@ -115,6 +117,7 @@ function DayCell({
       aria-disabled={disabled || undefined}
       data-state={day.state}
       data-today={isToday && !disabled ? "true" : undefined}
+      data-period={day.isPeriod ? "true" : undefined}
       data-just={just}
       data-day={day.day}
       data-nudge={nudged ? "true" : undefined}
@@ -131,6 +134,11 @@ function DayCell({
           <Bud size={12} />
         </span>
       ) : null}
+      {day.isPeriod ? (
+        <span title="Period day" className={styles.periodMark}>
+          <Drop size={12} />
+        </span>
+      ) : null}
       <span aria-hidden="true" className={styles.glyph}>
         {day.state === "taken" || day.state === "placeboTaken" ? (
           <svg viewBox="0 0 24 24" className={styles.checkSvg}>
@@ -140,7 +148,7 @@ function DayCell({
         {day.state === "skipped" || day.state === "placeboSkipped" ? (
           <span className={styles.dash} />
         ) : null}
-        {day.state === "placebo" ? <Moon size={14} /> : null}
+        {day.state === "placebo" && !day.isPeriod ? <Moon size={14} /> : null}
         {day.state === "missed" ? <MissedX /> : null}
         {day.state === "today" || day.state === "upcoming" ? (
           <GlyphFallback state={day.state} />
