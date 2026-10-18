@@ -70,6 +70,15 @@ export function rangeMonths(lo: string, hi: string): string[] {
   return months;
 }
 
+/** The `radius` months either side of `month` (default 2 → 5 months), oldest first. */
+export function seedMonths(month: string, radius = 2): string[] {
+  const months: string[] = [];
+  for (let i = -radius; i <= radius; i += 1) {
+    months.push(shiftMonth(month, i));
+  }
+  return months;
+}
+
 /** The `count` months just before `lo`, oldest first (for backfill chunks). */
 export function olderMonths(lo: string, count: number): string[] {
   const months: string[] = [];

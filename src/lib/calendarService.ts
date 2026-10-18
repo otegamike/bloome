@@ -18,8 +18,27 @@ void PillPackModel;
 void UserModel;
 
 export async function getMonth(userId: string, monthParam: string): Promise<CalendarResponse> {
-  if (!isValidMonth(monthParam)) {
-    throw badRequest("month must be YYYY-MM");
+  const [response] = await getMonths(userId, [monthParam]);
+  if (!response) throw badRequest("month must be YYYY-MM");
+  return response;
+}
+
+/**
+ * Load several months at once. One user, pack, log and period query covers the
+ * whole span, so a 5-month window costs the same round-trips as a single month.
+ */
+export async function getMonths(
+  userId: string,
+  monthsParam: string[],
+): Promise<CalendarResponse[]> {
+  const months = Array.from(new Set(monthsParam));
+  if (months.length === 0) {
+    throw badRequest("At least one month is required");
+  }
+  for (const month of months) {
+    if (!isValidMonth(month)) {
+      throw badRequest("month must be YYYY-MM");
+    }
   }
   await connectDB();
   const id = new Types.ObjectId(userId);
@@ -28,10 +47,18 @@ export async function getMonth(userId: string, monthParam: string): Promise<Cale
   const timezone = user.timezone;
   const today = todayInTz(timezone);
   const packs = await PillPackModel.find({ userId: id });
-  const days = monthDays(monthParam);
-  const first = days[0];
-  const last = days[days.length - 1];
-  if (!first || !last) throw badRequest("month must be YYYY-MM");
+  const likes = packs.map(toPackLike);
+
+  const ranges = months.map((month) => {
+    const days = monthDays(month);
+    const first = days[0];
+    const last = days[days.length - 1];
+    if (!first || !last) throw badRequest("month must be YYYY-MM");
+    return { month, days, first, last };
+  });
+  const first = ranges.reduce((min, r) => (r.first < min ? r.first : min), ranges[0]!.first);
+  const last = ranges.reduce((max, r) => (r.last > max ? r.last : max), ranges[0]!.last);
+
   const logs = await PillLogModel.find({ userId: id, day: { $gte: first, $lte: last } });
   const byDay: Record<string, LogLike | undefined> = {};
   for (const doc of logs) {
@@ -43,10 +70,10 @@ export async function getMonth(userId: string, monthParam: string): Promise<Cale
     };
   }
   const periodDays = await getPeriodDays(id, first, last);
-  return {
-    month: monthParam,
+  return ranges.map(({ month, days }) => ({
+    month,
     today,
     timezone,
-    days: buildDays({ packs: packs.map(toPackLike), logs: byDay, days, today, periodDays }),
-  };
+    days: buildDays({ packs: likes, logs: byDay, days, today, periodDays }),
+  }));
 }

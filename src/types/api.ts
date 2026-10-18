@@ -58,6 +58,11 @@ export interface CalendarResponse {
   days: CalendarDay[];
 }
 
+/** Batched calendar response: one entry per requested month. */
+export interface CalendarBatchResponse {
+  months: CalendarResponse[];
+}
+
 export interface LogDTO {
   day: DayString;
   status: LogStatus;

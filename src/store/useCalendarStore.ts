@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
-import { deleteLog, deletePeriod, getCalendar, handleAuthError, putLog, startPeriod } from "@/client/apiClient";
+import { deleteLog, deletePeriod, getCalendars, handleAuthError, putLog, startPeriod } from "@/client/apiClient";
+import { currentMonthInTz, seedMonths, shiftMonth } from "@/client/calendarGrid";
 import { getDayState } from "@/lib/shared/cycle";
 import { compareDays, todayInTz } from "@/lib/shared/dates";
 import { useAlertStore } from "@/store/useAlertStore";
@@ -24,9 +25,8 @@ interface CalendarState {
   pending: Record<string, boolean | undefined>;
   epoch: number;
   lastFetchedAt: Record<string, number | undefined>;
-  fetchMonth: (month: string, opts?: { force?: boolean; prefetch?: boolean }) => Promise<void>;
+  fetchMonths: (months: string[], opts?: { force?: boolean }) => Promise<void>;
   ensureRange: (fromDay: DayString, toDay: DayString) => Promise<void>;
-  prefetchAdjacent: (month: string) => void;
   getDay: (day: DayString) => CalendarDay | null;
   markDay: (day: DayString, status: LogStatus, note?: string) => Promise<void>;
   removeLog: (day: DayString) => Promise<void>;
@@ -60,13 +60,6 @@ function loggedState(kind: DayKind, status: LogStatus): DayState {
     return status === "taken" ? "placeboTaken" : "placeboSkipped";
   }
   return status;
-}
-
-function shiftMonth(month: string, delta: number): string {
-  const [y, m] = month.split("-").map(Number) as [number, number];
-  const date = new Date(Date.UTC(y, m - 1 + delta, 1));
-  const out = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
-  return out;
 }
 
 function monthsBetween(fromDay: DayString, toDay: DayString): string[] {
@@ -128,57 +121,79 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   epoch: 0,
   lastFetchedAt: {},
 
-  fetchMonth: async (month, opts) => {
-    const cached = get().months[month];
-    if (cached?.status === "ready" && !opts?.force) {
+  fetchMonths: async (months, opts) => {
+    const force = opts?.force ?? false;
+    const requested = Array.from(new Set(months));
+    const targets = requested.filter((month) => {
+      const cached = get().months[month];
+      if (cached?.status === "loading") {
+        return false;
+      }
+      if (cached?.status === "ready" && !force) {
+        return false;
+      }
+      return true;
+    });
+    if (targets.length === 0) {
       return;
     }
-    if (cached?.status === "loading") {
-      return;
+    const seqs = new Map<string, number>();
+    for (const month of targets) {
+      const seq = (seqByMonth[month] ?? 0) + 1;
+      seqByMonth[month] = seq;
+      seqs.set(month, seq);
     }
-    const seq = (seqByMonth[month] ?? 0) + 1;
-    seqByMonth[month] = seq;
-    set((state) => ({
-      months: { ...state.months, [month]: { status: "loading", days: cached?.days ?? [] } },
-    }));
+    set((state) => {
+      const next = { ...state.months };
+      for (const month of targets) {
+        next[month] = { status: "loading", days: next[month]?.days ?? [] };
+      }
+      return { months: next };
+    });
     try {
-      const response = await getCalendar(month);
-      if (seqByMonth[month] !== seq) {
-        return;
-      }
-      set((state) => ({
-        months: { ...state.months, [month]: { status: "ready", days: response.days } },
-        today: response.today,
-        timezone: response.timezone,
-        lastFetchedAt: { ...state.lastFetchedAt, [month]: Date.now() },
-      }));
-      // Prefetched months never prefetch further: otherwise every load
-      // chains outward until the server's date window stops it.
-      if (!opts?.prefetch) {
-        get().prefetchAdjacent(month);
-      }
+      const response = await getCalendars(targets);
+      const byMonth = new Map(response.months.map((r) => [r.month, r]));
+      const latest = response.months[response.months.length - 1];
+      set((state) => {
+        const next = { ...state.months };
+        const fetched = { ...state.lastFetchedAt };
+        for (const month of targets) {
+          if (seqByMonth[month] !== seqs.get(month)) {
+            continue;
+          }
+          const result = byMonth.get(month);
+          if (!result) {
+            next[month] = { status: "error", days: next[month]?.days ?? [] };
+            continue;
+          }
+          next[month] = { status: "ready", days: result.days };
+          fetched[month] = Date.now();
+        }
+        return {
+          months: next,
+          lastFetchedAt: fetched,
+          today: latest?.today ?? state.today,
+          timezone: latest?.timezone ?? state.timezone,
+        };
+      });
     } catch (error) {
       handleAuthError(error);
-      if (seqByMonth[month] !== seq) {
-        return;
-      }
-      set((state) => ({
-        months: { ...state.months, [month]: { status: "error", days: cached?.days ?? [] } },
-      }));
+      set((state) => {
+        const next = { ...state.months };
+        for (const month of targets) {
+          if (seqByMonth[month] !== seqs.get(month)) {
+            continue;
+          }
+          next[month] = { status: "error", days: next[month]?.days ?? [] };
+        }
+        return { months: next };
+      });
     }
   },
 
   ensureRange: async (fromDay, toDay) => {
     const [from, to] = compareDays(fromDay, toDay) <= 0 ? [fromDay, toDay] : [toDay, fromDay];
-    await Promise.all(monthsBetween(from, to).map((m) => get().fetchMonth(m)));
-  },
-
-  prefetchAdjacent: (month) => {
-    for (const neighbor of [shiftMonth(month, -1), shiftMonth(month, 1)]) {
-      if (!get().months[neighbor]) {
-        void get().fetchMonth(neighbor, { prefetch: true });
-      }
-    }
+    await get().fetchMonths(monthsBetween(from, to));
   },
 
   getDay: (day) => {
@@ -456,11 +471,9 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   invalidateAll: () => {
-    const visible = get().today?.slice(0, 7);
+    const visible = get().today?.slice(0, 7) ?? currentMonthInTz(get().timezone ?? "UTC");
     set((state) => ({ months: {}, lastFetchedAt: {}, epoch: state.epoch + 1 }));
-    if (visible) {
-      void get().fetchMonth(visible, { force: true });
-    }
+    void get().fetchMonths(seedMonths(visible), { force: true });
   },
 
   refreshIfDayChanged: () => {
@@ -481,8 +494,6 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
   },
 
   refreshVisible: (months) => {
-    for (const month of months) {
-      void get().fetchMonth(month, { force: true });
-    }
+    void get().fetchMonths(months, { force: true });
   },
 }));

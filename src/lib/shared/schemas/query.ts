@@ -11,6 +11,20 @@ export const monthParamSchema = z
     return Math.abs(target - thisMonth) <= 60;
   }, "Month must be within 5 years of today");
 
+/** Upper bound on a batched calendar request, so one call stays cheap. */
+export const CALENDAR_MONTHS_LIMIT = 12;
+
+export const monthsParamSchema = z
+  .string()
+  .transform((raw) =>
+    raw
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean),
+  )
+  .pipe(z.array(monthParamSchema).min(1, "At least one month is required").max(CALENDAR_MONTHS_LIMIT))
+  .transform((months) => Array.from(new Set(months)));
+
 export const rangeQuerySchema = z
   .object({
     from: z.string(),

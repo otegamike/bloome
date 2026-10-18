@@ -24,6 +24,7 @@ import type { DayString } from "@/types";
 import styles from "./CalendarBoard.module.css";
 
 const BACKFILL_CHUNK = 5;
+const FORWARD_CHUNK = 3;
 const MAX_PANES = 25;
 
 // Every pane is exactly one viewport wide, so the scroll position IS the
@@ -34,7 +35,7 @@ export function CalendarBoard() {
   const timezone = useCalendarStore((s) => s.timezone);
   const serverToday = useCalendarStore((s) => s.today);
   const months = useCalendarStore((s) => s.months);
-  const fetchMonth = useCalendarStore((s) => s.fetchMonth);
+  const fetchMonths = useCalendarStore((s) => s.fetchMonths);
   const packs = usePackStore((s) => s.packs);
   const weekStartsOn = usePrefsStore((s) => s.weekStartsOn);
   const [anchor, setAnchor] = useState<string | null>(null);
@@ -168,24 +169,26 @@ export function CalendarBoard() {
   }, [displayedMonth]);
 
   // Keep the visible month loaded; backfill older chunks at the left edge and
-  // extend one month past the right edge.
+  // extend a few months past the right edge. Each edge loads in one request.
   useEffect(() => {
     if (!months[displayedMonth]) {
-      void fetchMonth(displayedMonth);
+      void fetchMonths([displayedMonth]);
     }
     if (activeIndex === 0 && panes.length > 0) {
       const chunk = olderMonths(panes[0] as string, BACKFILL_CHUNK).filter(
         (m) => !months[m] && (!firstPackMonth || m >= firstPackMonth),
       );
       const take = firstPackMonth ? chunk : chunk.slice(-1);
-      for (const m of take) {
-        void fetchMonth(m);
+      if (take.length > 0) {
+        void fetchMonths(take);
       }
     }
     if (activeIndex === panes.length - 1 && panes.length > 0) {
-      const next = shiftMonth(hi, 1);
-      if (!months[next]) {
-        void fetchMonth(next);
+      const forward = rangeMonths(shiftMonth(hi, 1), shiftMonth(hi, FORWARD_CHUNK)).filter(
+        (m) => !months[m],
+      );
+      if (forward.length > 0) {
+        void fetchMonths(forward);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -350,7 +353,7 @@ export function CalendarBoard() {
                 focusedDay={focusedDay}
                 onFocusDay={setFocusedDay}
                 onActivate={activate}
-                onRetry={() => void fetchMonth(pane, { force: true })}
+                onRetry={() => void fetchMonths([pane], { force: true })}
               />
             </section>
           ))}

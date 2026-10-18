@@ -12,7 +12,7 @@ import { PullRefresh } from "@/components/home/pull-refresh/PullRefresh";
 import { TimezoneBanner } from "@/components/home/timezone-banner/TimezoneBanner";
 import { TodayCard } from "@/components/home/today-card/TodayCard";
 import { Skeleton } from "@/components/ui/skeleton/Skeleton";
-import { currentMonthInTz } from "@/client/calendarGrid";
+import { currentMonthInTz, seedMonths } from "@/client/calendarGrid";
 import { useCalendarStore } from "@/store/useCalendarStore";
 import { usePackStore } from "@/store/usePackStore";
 import { useProfileStore } from "@/store/useProfileStore";
@@ -50,7 +50,7 @@ export function HomeScreen() {
   const packs = usePackStore((s) => s.packs);
   const packsStatus = usePackStore((s) => s.status);
   const fetchPacks = usePackStore((s) => s.fetchPacks);
-  const fetchMonth = useCalendarStore((s) => s.fetchMonth);
+  const fetchMonths = useCalendarStore((s) => s.fetchMonths);
   const refreshIfDayChanged = useCalendarStore((s) => s.refreshIfDayChanged);
   const timezone = useCalendarStore((s) => s.timezone);
 
@@ -62,7 +62,7 @@ export function HomeScreen() {
 
   useEffect(() => {
     const tz = timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-    void fetchMonth(currentMonthInTz(tz));
+    void fetchMonths(seedMonths(currentMonthInTz(tz)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timezone]);
 
@@ -135,7 +135,7 @@ export function HomeScreen() {
     const zone = state.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
     const visible = state.today?.slice(0, 7) ?? currentMonthInTz(zone);
     await Promise.allSettled([
-      state.fetchMonth(visible, { force: true }),
+      state.fetchMonths([visible], { force: true }),
       usePackStore.getState().fetchPacks(),
     ]);
   };

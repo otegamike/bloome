@@ -7,7 +7,7 @@ import {
   mockDeleteMe,
   mockDeletePack,
   mockDeletePeriod,
-  mockGetCalendar,
+  mockGetCalendars,
   mockGetMe,
   mockListPacks,
   mockListShortcutTokens,
@@ -23,8 +23,8 @@ import {
 } from "@/client/mocks/mockApi";
 import type {
   ApiErrorBody,
+  CalendarBatchResponse,
   CalendarDay,
-  CalendarResponse,
   MeResponse,
   PackDTO,
   ShortcutTokenDTO,
@@ -182,11 +182,12 @@ export async function deletePack(id: string): Promise<void> {
   return request<void>(`/api/packs/${id}`, { method: "DELETE" });
 }
 
-export async function getCalendar(month: string): Promise<CalendarResponse> {
+export async function getCalendars(months: string[]): Promise<CalendarBatchResponse> {
   if (isMockMode()) {
-    return mock(() => mockGetCalendar(month));
+    return mock(() => mockGetCalendars(months));
   }
-  return request<CalendarResponse>(`/api/calendar?month=${encodeURIComponent(month)}`);
+  const query = encodeURIComponent(months.join(","));
+  return request<CalendarBatchResponse>(`/api/calendar?months=${query}`);
 }
 
 export async function putLog(

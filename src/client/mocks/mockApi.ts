@@ -12,8 +12,8 @@ import { loadMockState, saveMockState, type MockState } from "@/client/mocks/moc
 import { consumeMockLogFailure } from "@/client/mockMode";
 import type {
   ApiErrorBody,
+  CalendarBatchResponse,
   CalendarDay,
-  CalendarResponse,
   MeResponse,
   PackDTO,
   ShortcutTokenDTO,
@@ -324,26 +324,24 @@ export async function mockDeletePack(id: string): Promise<void> {
   });
 }
 
-export async function mockGetCalendar(month: string): Promise<CalendarResponse> {
+export async function mockGetCalendars(months: string[]): Promise<CalendarBatchResponse> {
   await delay();
   return withState((state) => {
-    if (!isValidMonth(month)) {
-      throw new MockApiError(400, "Month must be YYYY-MM");
-    }
-    const days = monthDays(month);
     const today = todayInTz(state.me.timezone);
-    return {
-      month,
-      today,
-      timezone: state.me.timezone,
-      days: buildDays({
-        packs: packLikes(state),
-        logs: state.logs,
-        days,
+    const periodDays = periodDaySet(state);
+    const responses = months.map((month) => {
+      if (!isValidMonth(month)) {
+        throw new MockApiError(400, "Month must be YYYY-MM");
+      }
+      const days = monthDays(month);
+      return {
+        month,
         today,
-        periodDays: periodDaySet(state),
-      }),
-    };
+        timezone: state.me.timezone,
+        days: buildDays({ packs: packLikes(state), logs: state.logs, days, today, periodDays }),
+      };
+    });
+    return { months: responses };
   });
 }
 
