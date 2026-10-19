@@ -1,16 +1,17 @@
 interface IconProps {
   size?: number;
   className?: string;
+  filled?: boolean;
 }
 
-export function Drop({ size = 24, className }: IconProps) {
+export function Drop({ size = 24, className, filled = false }: IconProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
+      fill={filled ? "currentColor" : "none"}
+      stroke={filled ? "none" : "currentColor"}
       strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"

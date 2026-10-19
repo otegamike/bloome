@@ -1,4 +1,4 @@
-import { buildDays, getDayKind, placeboIndex, periodDaysFor, resolveAnchor } from "@/lib/shared/cycle";
+import { buildDays, getDayKind, placeboIndex, periodDaysFor, periodRun, resolveAnchor } from "@/lib/shared/cycle";
 import {
   addDays,
   compareDays,
@@ -421,10 +421,33 @@ export async function mockStartPeriod(day: string): Promise<{ days: CalendarDay[
   });
 }
 
-export async function mockDeletePeriod(day: string): Promise<void> {
+export async function mockAddPeriodDay(day: string): Promise<{ days: CalendarDay[] }> {
   await delay();
-  withState((state) => {
-    delete state.periodDays[day];
+  return withState((state) => {
+    if (!isValidDay(day)) {
+      throw new MockApiError(400, "Day must be YYYY-MM-DD");
+    }
+    const anchor = resolveAnchor(packLikes(state), day);
+    if (!anchor) {
+      throw new MockApiError(422, "That day is not in a pack");
+    }
+    if (getDayKind(anchor.startDay, anchor.activeDays, anchor.placeboDays, day) !== "placebo") {
+      throw new MockApiError(422, "A period day must fall on a placebo day");
+    }
+    state.periodDays[day] = true;
+    return { days: [buildCalendarDay(state, day)] };
+  });
+}
+
+export async function mockDeletePeriod(day: string): Promise<{ days: CalendarDay[] }> {
+  await delay();
+  return withState((state) => {
+    const periodSet = new Set<DayString>(Object.keys(state.periodDays));
+    const run = periodRun(periodSet, day);
+    for (const removed of run) {
+      delete state.periodDays[removed];
+    }
+    return { days: run.map((removed) => buildCalendarDay(state, removed)) };
   });
 }
 

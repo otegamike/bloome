@@ -1,8 +1,16 @@
 import { create } from "zustand";
 
-import { deleteLog, deletePeriod, getCalendarRange, handleAuthError, putLog, startPeriod } from "@/client/apiClient";
+import {
+  addPeriodDay,
+  deleteLog,
+  deletePeriod,
+  getCalendarRange,
+  handleAuthError,
+  putLog,
+  startPeriod,
+} from "@/client/apiClient";
 import { currentMonthInTz, seedMonths, shiftMonth } from "@/client/calendarGrid";
-import { getDayState } from "@/lib/shared/cycle";
+import { getDayState, periodRun } from "@/lib/shared/cycle";
 import { compareDays, todayInTz } from "@/lib/shared/dates";
 import { useAlertStore } from "@/store/useAlertStore";
 import type { CalendarDay } from "@/types/api";
@@ -31,6 +39,7 @@ interface CalendarState {
   markDay: (day: DayString, status: LogStatus, note?: string) => Promise<void>;
   removeLog: (day: DayString) => Promise<void>;
   markPeriod: (day: DayString) => Promise<void>;
+  markPeriodDay: (day: DayString) => Promise<void>;
   removePeriod: (day: DayString) => Promise<void>;
   invalidateAll: () => void;
   refreshIfDayChanged: () => void;
@@ -419,7 +428,7 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     }
   },
 
-  removePeriod: async (day) => {
+  markPeriodDay: async (day) => {
     const alerts = useAlertStore.getState();
     const key = `period:${day}`;
     const state = get();
@@ -430,41 +439,87 @@ export const useCalendarStore = create<CalendarState>((set, get) => ({
     if (!current || !state.today) {
       return;
     }
+    if (current.kind !== "placebo") {
+      alerts.addAlert({ kind: "info", message: "A period day must fall on a placebo day" });
+      return;
+    }
     const epoch = state.epoch;
-    const snapshot = current;
-    const optimistic: CalendarDay = { ...current, isPeriod: false };
-    set((s) => ({
-      months: {
-        ...s.months,
-        [monthOf(day)]: {
-          status: s.months[monthOf(day)]?.status ?? "ready",
-          days: (s.months[monthOf(day)]?.days ?? []).map((d) => (d.day === day ? optimistic : d)),
-        },
-      },
-      pending: { ...s.pending, [key]: true },
-    }));
+    set((s) => ({ pending: { ...s.pending, [key]: true } }));
     try {
-      await deletePeriod(day);
+      const { days } = await addPeriodDay(day);
+      if (get().epoch !== epoch) {
+        return;
+      }
+      set((s) => ({
+        months: patchDays(s.months, days),
+        pending: { ...s.pending, [key]: false },
+      }));
+      const timezone = get().timezone ?? state.timezone ?? "UTC";
+      alerts.addAlert({
+        kind: "success",
+        message: `Period day added on ${prettyDay(day, timezone)}`,
+      });
+      alerts.announce(`Period day added on ${prettyDay(day, timezone)}`);
+    } catch (error) {
+      handleAuthError(error);
       if (get().epoch !== epoch) {
         return;
       }
       set((s) => ({ pending: { ...s.pending, [key]: false } }));
-      alerts.addAlert({ kind: "info", message: "Period day removed" });
+      alerts.addAlert({ kind: "error", message: "Couldn't save that. Tap to try again." });
+    }
+  },
+
+  removePeriod: async (day) => {
+    const alerts = useAlertStore.getState();
+    const key = `period:${day}`;
+    const state = get();
+    if (state.pending[key]) {
+      return;
+    }
+    const current = state.getDay(day);
+    if (!current || !state.today || !current.isPeriod) {
+      return;
+    }
+    const epoch = state.epoch;
+    const periodDays = new Set<DayString>();
+    for (const entry of Object.values(state.months)) {
+      if (!entry || entry.status !== "ready") continue;
+      for (const loaded of entry.days) {
+        if (loaded.isPeriod) periodDays.add(loaded.day);
+      }
+    }
+    const run = periodRun(periodDays, day);
+    const before: CalendarDay[] = [];
+    for (const runDay of run) {
+      const snapshot = state.getDay(runDay);
+      if (snapshot) before.push(snapshot);
+    }
+    const optimistic = before.map((snapshot) => ({ ...snapshot, isPeriod: false }));
+    set((s) => ({
+      months: patchDays(s.months, optimistic),
+      pending: { ...s.pending, [key]: true },
+    }));
+    try {
+      const { days } = await deletePeriod(day);
+      if (get().epoch !== epoch) {
+        return;
+      }
+      set((s) => ({
+        months: patchDays(s.months, days),
+        pending: { ...s.pending, [key]: false },
+      }));
+      alerts.addAlert({
+        kind: "info",
+        message: days.length > 1 ? "Period days removed" : "Period day removed",
+      });
     } catch (error) {
       handleAuthError(error);
       if (get().epoch !== epoch) {
         return;
       }
       set((s) => ({
-        months: {
-          ...s.months,
-          [monthOf(day)]: {
-            status: s.months[monthOf(day)]?.status ?? "ready",
-            days: (s.months[monthOf(day)]?.days ?? []).map((d) =>
-              d.day === day ? snapshot : d,
-            ),
-          },
-        },
+        months: patchDays(s.months, before),
         pending: { ...s.pending, [key]: false },
       }));
       alerts.addAlert({ kind: "error", message: "Couldn't save that. Tap to try again." });

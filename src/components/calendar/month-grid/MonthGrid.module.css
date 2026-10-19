@@ -321,8 +321,8 @@
     135deg,
     transparent 0,
     transparent 6px,
-    color-mix(in srgb, var(--color-period) 22%, transparent) 6px,
-    color-mix(in srgb, var(--color-period) 22%, transparent) 8px
+    color-mix(in srgb, var(--color-period-stripe) 55%, transparent) 6px,
+    color-mix(in srgb, var(--color-period-stripe) 55%, transparent) 8px
   );
 }
 

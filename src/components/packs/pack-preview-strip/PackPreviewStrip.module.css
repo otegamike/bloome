@@ -124,10 +124,8 @@
   background: transparent;
 }
 
-.dot[data-state="today"] {
-  border: 2px solid var(--color-primary);
-  background: transparent;
-  animation: breathe 2.6s var(--ease-soft) infinite;
+.dot[data-current="true"] {
+  box-shadow: 0 0 0 2px var(--color-primary);
 }
 
 .dot[data-state="outside"] {

@@ -75,6 +75,7 @@ export function TodayCard() {
   const markDay = useCalendarStore((s) => s.markDay);
   const removeLog = useCalendarStore((s) => s.removeLog);
   const markPeriod = useCalendarStore((s) => s.markPeriod);
+  const markPeriodDay = useCalendarStore((s) => s.markPeriodDay);
   const removePeriod = useCalendarStore((s) => s.removePeriod);
   const day = useCalendarDay(today);
   const currentPack = usePackStore((s) => s.currentPack)();
@@ -107,6 +108,8 @@ export function TodayCard() {
       : null;
   const canStartPeriod =
     day?.isPeriod !== true && (placeboIndex === 3 || placeboIndex === 4);
+  const canMarkPeriodDay =
+    day?.kind === "placebo" && day?.isPeriod !== true && !canStartPeriod;
 
   return (
     <section
@@ -157,17 +160,26 @@ export function TodayCard() {
             Placebo day
           </p>
           <p className={styles.placeboSub}>Rest day. Mark it if you took one.</p>
-          {canStartPeriod ? (
-            <p className={styles.periodNote}>Your period may start today.</p>
-          ) : null}
           <div className={styles.placeboActions}>
             <Button onClick={() => void markDay(today, "taken")}>Mark as taken</Button>
-            {canStartPeriod ? (
-              <Button variant="secondary" onClick={() => void markPeriod(today)}>
-                Mark period start
-              </Button>
-            ) : null}
           </div>
+        </div>
+      ) : null}
+
+      {canStartPeriod ? (
+        <div className={styles.period}>
+          <p className={styles.periodNote}>Your period may start today.</p>
+          <Button variant="secondary" onClick={() => void markPeriod(today)}>
+            Mark period start
+          </Button>
+        </div>
+      ) : null}
+
+      {canMarkPeriodDay ? (
+        <div className={styles.period}>
+          <Button variant="secondary" onClick={() => void markPeriodDay(today)}>
+            Mark as period day
+          </Button>
         </div>
       ) : null}
 

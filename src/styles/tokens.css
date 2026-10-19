@@ -103,6 +103,7 @@
   --color-placebo-taken: #e7aec6;
   --color-period: #d24d63;
   --color-period-soft: #fde2e8;
+  --color-period-stripe: #e02f4f;
   --color-missed: #e07a70;
   --color-missed-soft: #ffe4e0;
   --color-missed-border: #f2aba3;
@@ -151,6 +152,7 @@
   --color-placebo-taken: #dfa9bf;
   --color-period: #b83a52;
   --color-period-soft: #fadbe1;
+  --color-period-stripe: #cf2743;
   --color-missed: #dd7468;
   --color-missed-soft: #ffe3de;
   --color-missed-border: #efa79e;
@@ -199,6 +201,7 @@
   --color-placebo-taken: #aed9be;
   --color-period: #cf5546;
   --color-period-soft: #fde2dc;
+  --color-period-stripe: #e6432c;
   --color-missed: #e4786b;
   --color-missed-soft: #ffe3de;
   --color-missed-border: #f4a99f;

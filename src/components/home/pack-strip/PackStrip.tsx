@@ -73,7 +73,7 @@ export function PackStrip() {
         <p className={styles.started}>Started {formatStarted(currentPack.startDay)}</p>
       </div>
       {loaded ? (
-        <PackPreviewStrip variant="live" days={days} />
+        <PackPreviewStrip variant="live" days={days} today={today} />
       ) : (
         <div className={styles.loading}>
           <Skeleton variant="chip" />

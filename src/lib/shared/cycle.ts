@@ -57,7 +57,7 @@ export function placeboIndex(
 
 /**
  * The period a start on `startDay` covers: the start day plus up to the next
- * four days, clipped so every day stays inside the same pack's placebo block.
+ * three days, clipped so every day stays inside the same pack's placebo block.
  * Returns [] when `startDay` is not a placebo day.
  */
 export function periodDaysFor(
@@ -68,12 +68,31 @@ export function periodDaysFor(
 ): DayString[] {
   const index = placeboIndex(packStart, activeDays, placeboDays, startDay);
   if (index === null) return [];
-  const following = Math.min(4, placeboDays - index);
+  const following = Math.min(3, placeboDays - index);
   const days: DayString[] = [];
   for (let i = 0; i <= following; i += 1) {
     days.push(addDays(startDay, i));
   }
   return days;
+}
+
+/**
+ * The maximal run of consecutive period days containing `day`. Period days are
+ * added or removed as a whole group, never one day out of the middle.
+ */
+export function periodRun(periodDays: ReadonlySet<DayString>, day: DayString): DayString[] {
+  if (!periodDays.has(day)) return [];
+  let first = day;
+  while (periodDays.has(addDays(first, -1))) {
+    first = addDays(first, -1);
+  }
+  const run: DayString[] = [];
+  let cursor = first;
+  while (periodDays.has(cursor)) {
+    run.push(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  return run;
 }
 
 export interface DayStateArgs {

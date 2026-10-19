@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PackLike } from "@/types/api";
 
-import { buildDays, getDayKind, getDayState, periodDaysFor, placeboIndex, resolveAnchor } from "@/lib/shared/cycle";
+import { buildDays, getDayKind, getDayState, periodDaysFor, periodRun, placeboIndex, resolveAnchor } from "@/lib/shared/cycle";
 
 const PACK_21_7: PackLike = {
   id: "pack-a",
@@ -190,13 +190,12 @@ describe("placeboIndex", () => {
 });
 
 describe("periodDaysFor", () => {
-  it("spans the start day plus four days when started on the third placebo day", () => {
+  it("spans the start day plus three days when started on the third placebo day", () => {
     expect(periodDaysFor("2026-01-01", 21, 7, "2026-01-24")).toEqual([
       "2026-01-24",
       "2026-01-25",
       "2026-01-26",
       "2026-01-27",
-      "2026-01-28",
     ]);
   });
 
@@ -215,5 +214,27 @@ describe("periodDaysFor", () => {
 
   it("returns an empty list for a non-placebo day", () => {
     expect(periodDaysFor("2026-01-01", 21, 7, "2026-01-10")).toEqual([]);
+  });
+});
+
+describe("periodRun", () => {
+  const periodDays = new Set(["2026-01-24", "2026-01-25", "2026-01-26", "2026-01-27"]);
+
+  it("returns the whole run from any day inside it", () => {
+    expect(periodRun(periodDays, "2026-01-26")).toEqual([
+      "2026-01-24",
+      "2026-01-25",
+      "2026-01-26",
+      "2026-01-27",
+    ]);
+  });
+
+  it("stops at a gap", () => {
+    const split = new Set(["2026-01-24", "2026-01-26", "2026-01-27"]);
+    expect(periodRun(split, "2026-01-26")).toEqual(["2026-01-26", "2026-01-27"]);
+  });
+
+  it("returns an empty list for a non-period day", () => {
+    expect(periodRun(periodDays, "2026-01-20")).toEqual([]);
   });
 });

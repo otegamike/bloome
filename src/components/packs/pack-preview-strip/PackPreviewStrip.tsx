@@ -9,12 +9,13 @@ import styles from "./PackPreviewStrip.module.css";
 
 type StripProps =
   | { variant: "preview"; startDay: DayString; activeDays: number; placeboDays: number }
-  | { variant: "live"; days: CalendarDay[] };
+  | { variant: "live"; days: CalendarDay[]; today: DayString | null };
 
 interface Dot {
   key: string;
   dotState: string;
   label: string;
+  current: boolean;
 }
 
 function previewDots(startDay: DayString, activeDays: number, placeboDays: number): Dot[] {
@@ -27,12 +28,13 @@ function previewDots(startDay: DayString, activeDays: number, placeboDays: numbe
       key: day,
       dotState: kind === "placebo" ? "placebo" : "upcoming",
       label: `Day ${i + 1}, ${kind}`,
+      current: false,
     });
   }
   return dots;
 }
 
-function liveDots(days: CalendarDay[]): Dot[] {
+function liveDots(days: CalendarDay[], today: DayString | null): Dot[] {
   return days.map((d, index) => {
     const position = d.dayInPack ?? index + 1;
     let label: string;
@@ -64,14 +66,14 @@ function liveDots(days: CalendarDay[]): Dot[] {
       default:
         label = `Day ${position}, ${d.state}`;
     }
-    return { key: d.day, dotState: d.state, label };
+    return { key: d.day, dotState: d.state, label, current: d.day === today };
   });
 }
 
 export function PackPreviewStrip(props: StripProps) {
   const dots = props.variant === "preview"
     ? previewDots(props.startDay, props.activeDays, props.placeboDays)
-    : liveDots(props.days);
+    : liveDots(props.days, props.today);
   const rows = chunkIntoRows(dots);
   return (
     <div role="list" aria-label="Pack days" className={styles.strip}>
@@ -115,7 +117,12 @@ interface StripSlotProps {
 function StripSlot({ dot, hasNext, turnsDown }: StripSlotProps) {
   return (
     <div role="listitem" aria-label={dot.label} className={styles.slot}>
-      <span data-state={dot.dotState} aria-hidden="true" className={styles.dot}>
+      <span
+        data-state={dot.dotState}
+        data-current={dot.current ? "true" : undefined}
+        aria-hidden="true"
+        className={styles.dot}
+      >
         {dot.dotState === "taken" || dot.dotState === "placeboTaken" ? <Check size={10} /> : null}
       </span>
       {hasNext ? (

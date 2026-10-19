@@ -136,7 +136,7 @@ function DayCell({
       ) : null}
       {day.isPeriod ? (
         <span title="Period day" className={styles.periodMark}>
-          <Drop size={12} />
+          <Drop size={12} filled />
         </span>
       ) : null}
       <span aria-hidden="true" className={styles.glyph}>

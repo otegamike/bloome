@@ -35,6 +35,7 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
   const markDay = useCalendarStore((s) => s.markDay);
   const removeLog = useCalendarStore((s) => s.removeLog);
   const markPeriod = useCalendarStore((s) => s.markPeriod);
+  const markPeriodDay = useCalendarStore((s) => s.markPeriodDay);
   const removePeriod = useCalendarStore((s) => s.removePeriod);
   const packs = usePackStore((s) => s.packs);
   const [note, setNote] = useState<string | null>(null);
@@ -69,6 +70,12 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
   const canStartPeriod =
     calendarDay?.isPeriod !== true &&
     (placeboIndex === 3 || placeboIndex === 4) &&
+    !!today &&
+    day <= today;
+  const canMarkPeriodDay =
+    calendarDay?.kind === "placebo" &&
+    calendarDay.isPeriod !== true &&
+    !canStartPeriod &&
     !!today &&
     day <= today;
 
@@ -141,6 +148,14 @@ export function DaySheet({ day, onClose }: { day: DayString | null; onClose: () 
           <p className={styles.periodNote}>Your period may start today.</p>
           <Button variant="secondary" onClick={() => void markPeriod(day).then(close)}>
             Mark period start
+          </Button>
+        </div>
+      ) : null}
+
+      {canMarkPeriodDay ? (
+        <div className={styles.period}>
+          <Button variant="secondary" onClick={() => void markPeriodDay(day).then(close)}>
+            Mark as period day
           </Button>
         </div>
       ) : null}
