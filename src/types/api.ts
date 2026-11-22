@@ -112,3 +112,32 @@ export interface ShortcutTokenDTO {
   lastUsedAt: string | null;
   expiresAt: string | null;
 }
+
+// --- Mobile app auth (additive; web clients ignore these) ---
+
+/** Returned by `/api/mobile/pair/start`. */
+export interface MobilePairingStartResponse {
+  pairingId: string;
+  /** Absolute web URL the phone opens in the system browser. */
+  verificationUrl: string;
+  expiresAt: string;
+}
+
+/** Returned by `/api/mobile/pair/approve`; shown once on the web page. */
+export interface MobilePairingApproveResponse {
+  /** Human-readable code, formatted as XXXXX-XXXXX. */
+  code: string;
+  expiresAt: string;
+  deviceName: string | null;
+}
+
+/** Returned by `/api/mobile/pair/redeem` and `/api/mobile/auth/refresh`. */
+export interface MobileTokenResponse {
+  tokenType: "Bearer";
+  accessToken: string;
+  accessExpiresAt: string;
+  refreshToken: string;
+  refreshExpiresAt: string;
+  /** Space-free scope string, e.g. "data". */
+  scope: string;
+}

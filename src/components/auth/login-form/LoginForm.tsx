@@ -11,9 +11,18 @@ import { isMockMode, setMockSignedIn } from "@/client/mockMode";
 import { credentialsLoginSchema } from "@/lib/shared/schemas";
 import styles from "./LoginForm.module.css";
 
+/** Only same-origin paths are allowed, so `?callbackUrl=` can't send us off-site. */
+function safeCallbackPath(value: string | null): string {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return "/";
+  }
+  return value;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const callbackUrl = safeCallbackPath(searchParams.get("callbackUrl"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
@@ -50,13 +59,14 @@ export function LoginForm() {
     setSubmitting(true);
     if (isMockMode()) {
       setMockSignedIn(true);
-      router.replace("/");
+      router.replace(callbackUrl);
       return;
     }
     const response = await signIn("credentials", {
       email,
       password,
       redirect: false,
+      callbackUrl,
     });
     setSubmitting(false);
     if (response?.error) {
@@ -66,13 +76,13 @@ export function LoginForm() {
       return;
     }
     setFailures(0);
-    router.replace("/");
+    router.replace(callbackUrl);
   };
 
   return (
     <div className={styles.wrap}>
       <h1 className={styles.title}>Welcome back</h1>
-      <GoogleButton />
+      <GoogleButton callbackUrl={callbackUrl} />
       <div className={styles.divider}>
         <span>or</span>
       </div>

@@ -5,7 +5,9 @@ import { Types } from "mongoose";
 
 import { conflict, notFound } from "@/lib/apiErrors";
 import { connectDB } from "@/lib/db";
+import { deleteMobileAuthForUser } from "@/lib/mobileAuthService";
 import AuthAttemptModel from "@/models/AuthAttempt";
+import PeriodDayModel from "@/models/PeriodDay";
 import PillLogModel from "@/models/PillLog";
 import PillPackModel from "@/models/PillPack";
 import ShortcutTokenModel from "@/models/ShortcutToken";
@@ -14,6 +16,7 @@ import type { MeUpdateInput, RegisterInput } from "@/lib/shared/schemas";
 import type { MeResponse } from "@/types/api";
 
 void AuthAttemptModel;
+void PeriodDayModel;
 void PillLogModel;
 void PillPackModel;
 void ShortcutTokenModel;
@@ -154,6 +157,8 @@ export async function deleteAccount(userId: string): Promise<void> {
   const id = new Types.ObjectId(userId);
   await PillLogModel.deleteMany({ userId: id });
   await PillPackModel.deleteMany({ userId: id });
+  await PeriodDayModel.deleteMany({ userId: id });
   await ShortcutTokenModel.deleteMany({ userId: id });
+  await deleteMobileAuthForUser(userId);
   await UserModel.deleteOne({ _id: id });
 }

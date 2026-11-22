@@ -84,6 +84,26 @@ Security notes:
 - Failed authentication is throttled (20 per 15 minutes per IP); successful calls are limited to 120 per hour per token.
 - Message review (optional): `npm run messages:review` lists LLM-suggested notification lines awaiting approval (`--approve <id>,…`, `--reject <id>`, `--approve-all`). The LLM generation script itself is not built yet; curated messages live in `src/lib/reminderMessages/pool.ts`.
 
+## Mobile app (Expo Go)
+
+The Expo app links to a web account without cookies or Google tokens, and never talks to MongoDB directly.
+
+1. The phone makes a PKCE verifier and calls `POST /api/mobile/pair/start` with the S256 challenge.
+2. It opens the returned `verificationUrl` in the system browser. If signed out, you sign in with Google or email and land back on `/mobile/authorize`.
+3. The web page approves the request and shows a one-time code (valid 5 minutes).
+4. The phone calls `POST /api/mobile/pair/redeem` with the pairing id, code, and verifier. The response holds a 15-minute access token and a 30-day refresh token.
+5. The phone calls the normal data endpoints with `Authorization: Bearer <accessToken>` and rotates with `POST /api/mobile/auth/refresh`.
+
+Details:
+
+- Only SHA-256 hashes of access tokens, refresh tokens, and pairing codes are stored. Pairing links live 10 minutes; codes live 5.
+- Refresh tokens rotate on every use. Reusing an already-exchanged token revokes that device (it may have been stolen), so the app should make refresh single-flight.
+- `POST /api/mobile/auth/logout` revokes the device. It is idempotent and needs only the refresh token.
+- Bearer tokens work on calendar, logs, period days, packs, and `GET`/`PATCH /api/me`. Account deletion, push subscriptions, and shortcut-token management stay web-session only.
+- `/api/mobile` is public at the proxy; approve and revoke require a web session plus a same-origin request.
+- Deleting an account also removes its linked devices, refresh tokens, and pending pairings.
+- `AUTH_URL` must be the public site URL in production. Locally, use your machine's LAN address (not `localhost`) when testing from a physical phone, because the phone opens `${AUTH_URL}/mobile/authorize?pairing=...`.
+
 ## Vercel deployment
 
 1. Push the repo and import it in Vercel.

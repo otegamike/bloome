@@ -9,6 +9,7 @@ const PUBLIC_PREFIXES = [
   "/api/register",
   "/api/cron",
   "/api/shortcuts/status",
+  "/api/mobile",
 ];
 
 function isPublic(pathname: string): boolean {

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
+import { connectDB } from "@/lib/db";
 import AuthAttemptModel from "@/models/AuthAttempt";
 
 void AuthAttemptModel;
@@ -26,6 +27,7 @@ export function rateLimitKey(parts: string[]): string {
 }
 
 export async function isRateLimited(key: string, limit: number): Promise<boolean> {
+  await connectDB();
   const rec = await AuthAttemptModel.findOne({ key }).lean();
   if (!rec || rec.count < limit) return false;
   return rec.expiresAt.getTime() > Date.now();
@@ -33,12 +35,14 @@ export async function isRateLimited(key: string, limit: number): Promise<boolean
 
 /** Seconds until the current window resets (for Retry-After headers). */
 export async function retryAfterSeconds(key: string): Promise<number> {
+  await connectDB();
   const rec = await AuthAttemptModel.findOne({ key }).lean();
   if (!rec) return 0;
   return Math.max(0, Math.ceil((rec.expiresAt.getTime() - Date.now()) / 1000));
 }
 
 export async function recordRateLimitHit(key: string, windowMs: number): Promise<void> {
+  await connectDB();
   const now = Date.now();
   const existing = await AuthAttemptModel.findOne({ key });
   if (existing && existing.expiresAt.getTime() > now) {
@@ -50,5 +54,6 @@ export async function recordRateLimitHit(key: string, windowMs: number): Promise
 }
 
 export async function clearRateLimit(key: string): Promise<void> {
+  await connectDB();
   await AuthAttemptModel.deleteOne({ key });
 }
