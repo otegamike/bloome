@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { DATA_SCOPE, requireIdentity } from "@/lib/identity";
-import { createPack, listPacks } from "@/lib/packService";
+import { createPack, listPacks } from "@/lib/packs/packService";
 import { parseJsonBody } from "@/lib/requestParsing";
+import { requireUserId } from "@/lib/session";
 import { packCreateSchema } from "@/lib/shared/schemas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     const packs = await listPacks(userId);
     return NextResponse.json({ packs });
   } catch (error) {
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     const input = await parseJsonBody(req, packCreateSchema);
     const pack = await createPack(userId, input);
     return NextResponse.json({ pack }, { status: 201 });

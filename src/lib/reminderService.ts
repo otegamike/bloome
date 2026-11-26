@@ -10,7 +10,7 @@ import { getDayKind, resolveAnchor } from "@/lib/shared/cycle";
 import { localTimeInTz, todayInTz } from "@/lib/shared/dates";
 import { resolveOnPlaceboDays, shouldRemindToday } from "@/lib/shared/reminders";
 import { pickMessage } from "@/lib/reminderMessages/pick";
-import { toPackLike } from "@/lib/packService";
+import { toPackLike } from "@/lib/packs/packService";
 import { sendToUser } from "@/lib/pushService";
 
 void PillLogModel;

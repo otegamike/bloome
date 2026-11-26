@@ -17,7 +17,7 @@ import {
   resolveAnchor,
 } from "@/lib/shared/cycle";
 import { addDays, isValidDay, todayInTz } from "@/lib/shared/dates";
-import { toPackLike } from "@/lib/packService";
+import { toPackLike } from "@/lib/packs/packService";
 import type { DayString } from "@/types";
 import type { CalendarDay, LogLike, PackLike } from "@/types/api";
 

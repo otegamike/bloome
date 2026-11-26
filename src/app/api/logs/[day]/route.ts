@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { DATA_SCOPE, requireIdentity } from "@/lib/identity";
-import { deleteLog, upsertLog } from "@/lib/logService";
+import { deleteLog, upsertLog } from "@/lib/logs/logService";
 import { parseJsonBody } from "@/lib/requestParsing";
+import { requireUserId } from "@/lib/session";
 import { logUpsertSchema } from "@/lib/shared/schemas";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ day: string }> }) {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     const { day } = await params;
     const input = await parseJsonBody(req, logUpsertSchema);
     const result = await upsertLog(userId, day, input);
@@ -21,9 +21,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ day: str
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ day: string }> }) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ day: string }> }) {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     const { day } = await params;
     await deleteLog(userId, day);
     return new NextResponse(null, { status: 204 });

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { redeemPairing } from "@/lib/mobileAuthService";
-import { MOBILE_PAIR_REDEEM_LIMIT, runLimitedAttempt } from "@/lib/mobileRateLimit";
+import { redeemPairing } from "@/lib/mobile/authService";
+import { MOBILE_PAIR_REDEEM_LIMIT, runLimitedAttempt } from "@/lib/mobile/rateLimit";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { clientIp } from "@/lib/rateLimit";
 import { mobilePairRedeemSchema } from "@/lib/shared/schemas";

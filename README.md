@@ -92,15 +92,15 @@ The Expo app links to a web account without cookies or Google tokens, and never 
 2. It opens the returned `verificationUrl` in the system browser. If signed out, you sign in with Google or email and land back on `/mobile/authorize`.
 3. The web page approves the request and shows a one-time code (valid 5 minutes).
 4. The phone calls `POST /api/mobile/pair/redeem` with the pairing id, code, and verifier. The response holds a 15-minute access token and a 30-day refresh token.
-5. The phone calls the normal data endpoints with `Authorization: Bearer <accessToken>` and rotates with `POST /api/mobile/auth/refresh`.
+5. The phone calls the mobile data endpoints with `Authorization: Bearer <accessToken>`: `GET /api/mobile/me`, `/api/mobile/packs`, `/api/mobile/calendar?month=YYYY-MM`, and `/api/mobile/logs?from=YYYY-MM-DD&to=YYYY-MM-DD`. It rotates tokens with `POST /api/mobile/auth/refresh`.
 
 Details:
 
 - Only SHA-256 hashes of access tokens, refresh tokens, and pairing codes are stored. Pairing links live 10 minutes; codes live 5.
 - Refresh tokens rotate on every use. Reusing an already-exchanged token revokes that device (it may have been stolen), so the app should make refresh single-flight.
 - `POST /api/mobile/auth/logout` revokes the device. It is idempotent and needs only the refresh token.
-- Bearer tokens work on calendar, logs, period days, packs, and `GET`/`PATCH /api/me`. Account deletion, push subscriptions, and shortcut-token management stay web-session only.
-- `/api/mobile` is public at the proxy; approve and revoke require a web session plus a same-origin request.
+- Mobile data routes require a bearer token with the `data` scope and never read the Auth.js cookie. The web routes (`/api/me`, `/api/packs`, `/api/calendar`, `/api/logs`, and their writes) stay cookie-session only. Account deletion, push subscriptions, and shortcut-token management stay web-session only.
+- `/api/mobile` is public at the proxy so its handlers can return a JSON 401 when the bearer token is missing; approve and revoke still require a web session plus a same-origin request.
 - Deleting an account also removes its linked devices, refresh tokens, and pending pairings.
 - `AUTH_URL` must be the public site URL in production. Locally, use your machine's LAN address (not `localhost`) when testing from a physical phone, because the phone opens `${AUTH_URL}/mobile/authorize?pairing=...`.
 

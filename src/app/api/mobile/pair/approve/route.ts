@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError, tooManyRequests } from "@/lib/apiErrors";
-import { approvePairing } from "@/lib/mobilePairingService";
-import { MOBILE_PAIR_APPROVE_LIMIT, mobileLimitKey } from "@/lib/mobileRateLimit";
+import { approvePairing } from "@/lib/mobile/pairingService";
+import { MOBILE_PAIR_APPROVE_LIMIT, mobileLimitKey } from "@/lib/mobile/rateLimit";
 import { assertSameOrigin } from "@/lib/origin";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { isRateLimited, recordRateLimitHit, retryAfterSeconds } from "@/lib/rateLimit";

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 
 import { MobileAuthorize } from "@/components/mobile/mobile-authorize/MobileAuthorize";
 import { auth } from "@/lib/auth";
-import { getPairingSummary } from "@/lib/mobilePairingService";
+import { getPairingSummary } from "@/lib/mobile/pairingService";
 import { pairingIdSchema } from "@/lib/shared/schemas";
 import type { MobilePairingSummary } from "@/types/MobileAuth";
 

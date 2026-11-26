@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { revokePairing } from "@/lib/mobilePairingService";
+import { revokePairing } from "@/lib/mobile/pairingService";
 import { assertSameOrigin } from "@/lib/origin";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { requireUserId } from "@/lib/session";

@@ -16,7 +16,7 @@ import {
   hashPairingCode,
   normalizePairingCode,
   parseMobileAccessBearer,
-} from "@/lib/mobileTokens";
+} from "@/lib/mobile/tokens";
 
 const PAIRING_ALPHABET = /^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{10}$/;
 

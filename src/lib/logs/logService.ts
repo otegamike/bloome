@@ -10,7 +10,7 @@ import PeriodDayModel from "@/models/PeriodDay";
 import UserModel from "@/models/User";
 import { compareDays, diffInDays, isValidDay, todayInTz } from "@/lib/shared/dates";
 import { buildDays, getDayKind, resolveAnchor } from "@/lib/shared/cycle";
-import { toPackLike } from "@/lib/packService";
+import { toPackLike } from "@/lib/packs/packService";
 import type { LogUpsertInput } from "@/lib/shared/schemas";
 import type { DayString } from "@/types";
 import type { CalendarDay, LogDTO, LogLike } from "@/types/api";

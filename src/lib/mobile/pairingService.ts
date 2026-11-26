@@ -9,7 +9,7 @@ import {
   generatePairingCode,
   generatePairingId,
   hashPairingCode,
-} from "@/lib/mobileTokens";
+} from "@/lib/mobile/tokens";
 import type { MobilePairStartInput } from "@/lib/shared/schemas";
 import MobilePairingModel from "@/models/MobilePairing";
 import type { MobilePairingSummary, MobilePairingView } from "@/types/MobileAuth";

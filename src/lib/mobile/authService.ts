@@ -14,7 +14,7 @@ import {
   generateRefreshToken,
   hashMobileToken,
   hashPairingCode,
-} from "@/lib/mobileTokens";
+} from "@/lib/mobile/tokens";
 import type { MobilePairRedeemInput } from "@/lib/shared/schemas";
 import MobileDeviceModel from "@/models/MobileDevice";
 import MobilePairingModel from "@/models/MobilePairing";

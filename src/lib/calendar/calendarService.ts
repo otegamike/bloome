@@ -9,9 +9,11 @@ import PillPackModel from "@/models/PillPack";
 import UserModel from "@/models/User";
 import { buildDays } from "@/lib/shared/cycle";
 import { isValidMonth, monthDays, todayInTz } from "@/lib/shared/dates";
-import { toPackLike } from "@/lib/packService";
-import { getPeriodDays } from "@/lib/periodService";
-import type { CalendarResponse, LogLike } from "@/types/api";
+import { toPackLike } from "@/lib/packs/packService";
+import { getPeriodDays } from "@/lib/logs/periodService";
+import { selectCalendar } from "@/lib/calendar/selection";
+import type { CalendarQuery } from "@/lib/shared/schemas";
+import type { CalendarBatchResponse, CalendarResponse, LogLike } from "@/types/api";
 
 void PillLogModel;
 void PillPackModel;
@@ -76,4 +78,13 @@ export async function getMonths(
     timezone,
     days: buildDays({ packs: likes, logs: byDay, days, today, periodDays }),
   }));
+}
+
+export async function getCalendar(
+  userId: string,
+  query: CalendarQuery,
+): Promise<CalendarResponse | CalendarBatchResponse> {
+  const selection = selectCalendar(query);
+  if ("month" in selection) return getMonth(userId, selection.month);
+  return { months: await getMonths(userId, selection.months) };
 }

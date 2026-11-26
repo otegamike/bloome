@@ -12,7 +12,7 @@ import {
   recordCredentialFailure,
 } from "@/lib/authThrottle";
 import { credentialsLoginSchema } from "@/lib/shared/schemas";
-import { findByEmailWithHash, findOrLinkGoogleUser } from "@/lib/userService";
+import { findByEmailWithHash, findOrLinkGoogleUser } from "@/lib/account/userService";
 
 // Fixed hash so unknown emails take the same time as wrong passwords.
 const DUMMY_HASH = bcrypt.hashSync("bloome-missing-account", 10);

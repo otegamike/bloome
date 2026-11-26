@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import { handleRouteError, tooManyRequests } from "@/lib/apiErrors";
 import { getEnv } from "@/lib/env";
-import { startPairing } from "@/lib/mobilePairingService";
-import { MOBILE_PAIR_START_LIMIT, mobileLimitKey } from "@/lib/mobileRateLimit";
+import { startPairing } from "@/lib/mobile/pairingService";
+import { MOBILE_PAIR_START_LIMIT, mobileLimitKey } from "@/lib/mobile/rateLimit";
 import { parseJsonBody } from "@/lib/requestParsing";
 import {
   clientIp,

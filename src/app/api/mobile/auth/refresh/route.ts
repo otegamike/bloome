@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { refreshMobileSession } from "@/lib/mobileAuthService";
-import { MOBILE_REFRESH_LIMIT, runLimitedAttempt } from "@/lib/mobileRateLimit";
+import { refreshMobileSession } from "@/lib/mobile/authService";
+import { MOBILE_REFRESH_LIMIT, runLimitedAttempt } from "@/lib/mobile/rateLimit";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { clientIp } from "@/lib/rateLimit";
 import { mobileRefreshSchema } from "@/lib/shared/schemas";

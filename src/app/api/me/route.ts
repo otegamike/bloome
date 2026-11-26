@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
 
+import { deleteAccount, getMe, updateMe } from "@/lib/account/userService";
 import { handleRouteError } from "@/lib/apiErrors";
-import { DATA_SCOPE, requireIdentity } from "@/lib/identity";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { requireUserId } from "@/lib/session";
 import { deleteAccountSchema, meUpdateSchema } from "@/lib/shared/schemas";
-import { deleteAccount, getMe, updateMe } from "@/lib/userService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     return NextResponse.json(await getMe(userId));
   } catch (error) {
     return handleRouteError(error);
@@ -21,7 +20,7 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
   try {
-    const { userId } = await requireIdentity(req, { scope: DATA_SCOPE });
+    const userId = await requireUserId();
     const input = await parseJsonBody(req, meUpdateSchema);
     return NextResponse.json(await updateMe(userId, input));
   } catch (error) {

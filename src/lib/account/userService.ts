@@ -5,7 +5,7 @@ import { Types } from "mongoose";
 
 import { conflict, notFound } from "@/lib/apiErrors";
 import { connectDB } from "@/lib/db";
-import { deleteMobileAuthForUser } from "@/lib/mobileAuthService";
+import { deleteMobileAuthForUser } from "@/lib/mobile/authService";
 import AuthAttemptModel from "@/models/AuthAttempt";
 import PeriodDayModel from "@/models/PeriodDay";
 import PillLogModel from "@/models/PillLog";

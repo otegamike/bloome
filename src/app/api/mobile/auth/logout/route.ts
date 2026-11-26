@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { handleRouteError } from "@/lib/apiErrors";
-import { logoutMobileDevice } from "@/lib/mobileAuthService";
+import { logoutMobileDevice } from "@/lib/mobile/authService";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { mobileLogoutSchema } from "@/lib/shared/schemas";
 

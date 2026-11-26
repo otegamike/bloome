@@ -8,7 +8,7 @@ import {
 } from "@/lib/authThrottle";
 import { parseJsonBody } from "@/lib/requestParsing";
 import { registerSchema } from "@/lib/shared/schemas";
-import { createCredentialsUser } from "@/lib/userService";
+import { createCredentialsUser } from "@/lib/account/userService";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

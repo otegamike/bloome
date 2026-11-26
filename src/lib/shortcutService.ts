@@ -4,7 +4,7 @@ import { Types } from "mongoose";
 
 import { notFound } from "@/lib/apiErrors";
 import { connectDB } from "@/lib/db";
-import { toPackLike } from "@/lib/packService";
+import { toPackLike } from "@/lib/packs/packService";
 import PillLogModel from "@/models/PillLog";
 import PillPackModel from "@/models/PillPack";
 import UserModel from "@/models/User";

@@ -18,7 +18,7 @@ vi.mock("@/models/User", () => ({
   },
 }));
 
-import { toMeResponse, updateMe } from "@/lib/userService";
+import { toMeResponse, updateMe } from "@/lib/account/userService";
 
 const userId = new Types.ObjectId().toString();
 
