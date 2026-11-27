@@ -99,7 +99,8 @@ Details:
 - Only SHA-256 hashes of access tokens, refresh tokens, and pairing codes are stored. Pairing links live 10 minutes; codes live 5.
 - Refresh tokens rotate on every use. Reusing an already-exchanged token revokes that device (it may have been stolen), so the app should make refresh single-flight.
 - `POST /api/mobile/auth/logout` revokes the device. It is idempotent and needs only the refresh token.
-- Mobile data routes require a bearer token with the `data` scope and never read the Auth.js cookie. The web routes (`/api/me`, `/api/packs`, `/api/calendar`, `/api/logs`, and their writes) stay cookie-session only. Account deletion, push subscriptions, and shortcut-token management stay web-session only.
+- Mobile data and write routes require a bearer token with the `data` scope and never read the Auth.js cookie. The web routes (`/api/me`, `/api/packs`, `/api/calendar`, `/api/logs`, and their writes) stay cookie-session only. Account deletion, push subscriptions, and shortcut-token management stay web-session only.
+- Mobile writes mirror the web routes: `PUT`/`DELETE /api/mobile/logs/[day]`, `POST /api/mobile/logs/period`, and `POST`/`DELETE /api/mobile/logs/period/[day]` use the same bodies and response shapes.
 - `/api/mobile` is public at the proxy so its handlers can return a JSON 401 when the bearer token is missing; approve and revoke still require a web session plus a same-origin request.
 - Deleting an account also removes its linked devices, refresh tokens, and pending pairings.
 - `AUTH_URL` must be the public site URL in production. Locally, use your machine's LAN address (not `localhost`) when testing from a physical phone, because the phone opens `${AUTH_URL}/mobile/authorize?pairing=...`.
